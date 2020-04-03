@@ -1,2 +1,3 @@
 # Rickroll-warning-system
- A discord bot that detects and warns you of potential Rick rolls.
+ An open source discord bot that scans youtube videos for rickrolling content.
+ 
