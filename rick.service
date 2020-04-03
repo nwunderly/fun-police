@@ -1,0 +1,28 @@
+
+[Unit]
+
+Description=Rickhard Paul Astley
+
+StartLimitIntervalSec=5min
+StartLimitBurst=5
+
+[Service]
+
+ExecStart=/usr/bin/python3.8 /home/rick/launcher.py
+
+Environment=PYTHONUNBUFFERED=1
+
+Restart=on-failure
+
+TimeoutStopSec=30s
+
+#Type=notify
+
+User=rick
+
+#WatchdogSec=30s
+
+
+[Install]
+
+WantedBy=default.target
