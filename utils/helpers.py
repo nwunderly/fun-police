@@ -2,6 +2,7 @@
 import logging
 import datetime
 import sys
+import asyncio
 
 
 def setup_logger(name):
@@ -30,3 +31,14 @@ def setup_logger(name):
     logger.addHandler(stream_handler)
     logger.setLevel(level)
     return logger
+
+
+async def maybe_coroutine(func, *args, **kwargs):
+    if asyncio.iscoroutinefunction(func):
+        return await func(*args, **kwargs)
+    else:
+        return func(*args, **kwargs)
+
+
+
+

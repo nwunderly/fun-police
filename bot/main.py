@@ -1,5 +1,5 @@
 # custom imports
-from utils.loggers import setup_logger
+from utils.helpers import setup_logger
 from bot.backend import Astley
 
 logger = setup_logger("richard")
@@ -11,6 +11,7 @@ class Richard(Astley):
     """
     def __init__(self):
         super().__init__(command_prefix="rr!")
+        self.scanners = list()
 
     # todo implement interface with scanners in this class
 

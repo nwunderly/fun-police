@@ -5,7 +5,7 @@ import asyncio
 import datetime
 
 # custom imports
-from utils.loggers import setup_logger
+from utils.helpers import setup_logger
 from confidential import authentication
 
 logger = setup_logger("Astley")

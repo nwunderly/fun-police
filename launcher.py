@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 from discord.ext import commands
 
 # custom imports
-from utils.loggers import setup_logger
+from utils.helpers import setup_logger
 from bot.main import Richard
 
 logger = setup_logger("launcher")
