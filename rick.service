@@ -1,7 +1,7 @@
 
 [Unit]
 
-Description=Rickhard Paul Astley
+Description=Richard Paul Astley
 
 StartLimitIntervalSec=5min
 StartLimitBurst=5
