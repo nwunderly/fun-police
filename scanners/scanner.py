@@ -14,7 +14,10 @@ DEFAULT_TIMEOUT = 5
 
 
 class ScanResults(enum.Enum):
-    check_failed = "Check function was not run."
+    """
+    Possible results of scan() in place of confidence rating.
+    """
+    check_failed = "Check returned false, scan function was not run."
     timed_out = "The scan took too long to complete and is no longer being watched."
 
 
@@ -57,7 +60,7 @@ class Scanner:
         Input should be input designated for reformat() if implemented.
         Otherwise, treat it as if scanner() is being run directly
 
-        :rtype: float
+        Will return either a float or a ScanResult.
         """
         if await maybe_coroutine(self.check, *args, **kwargs):
             args, kwargs = await maybe_coroutine(self.reformat, *args, **kwargs)

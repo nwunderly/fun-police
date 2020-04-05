@@ -5,7 +5,7 @@ from bot.backend import Astley
 logger = setup_logger("richard")
 
 
-class Richard(Astley):
+class Rick(Astley):
     """
     A bot that detects and warns you about possible Rick rolls.
     """
