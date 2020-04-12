@@ -6,7 +6,7 @@ from discord.ext import commands
 
 # custom imports
 from utils.helpers import setup_logger
-from bot.main import Richard
+from bot.main import Rick
 
 logger = setup_logger("launcher")
 
@@ -29,7 +29,7 @@ class Debug(commands.Cog):
 def start(debug):
     logger.info(f"Starting bot.")
 
-    bot = Richard()
+    bot = Rick()
 
     if sys.platform != 'linux' or debug:
         try:

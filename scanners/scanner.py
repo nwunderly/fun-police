@@ -22,10 +22,6 @@ class ScanResults(enum.Enum):
 
 
 class Scanner:
-    def __init__(self, pool_size=POOL_SIZE, timeout=DEFAULT_TIMEOUT):
-        self.timeout = timeout
-        self.unretrieved_results = list()
-        self.pool = multiprocessing.Pool(processes=pool_size)
 
     def scanner(self, *args, **kwargs):
         """
@@ -46,6 +42,7 @@ class Scanner:
 
         :rtype: bool
         """
+        return True
 
     def reformat(self, *args, **kwargs):
         """
@@ -61,6 +58,27 @@ class Scanner:
         Otherwise, treat it as if scanner() is being run directly
 
         Will return either a float or a ScanResult.
+        """
+        if await maybe_coroutine(self.check, *args, **kwargs):
+            args, kwargs = await maybe_coroutine(self.reformat, *args, **kwargs)
+            return await self.scanner(*args, *kwargs)
+        else:
+            # if the check fails
+            return ScanResults.check_failed
+
+
+class PoolScanner(Scanner):
+    """
+    Uses multiprocessing to perform more CPU-intensive checks.
+    """
+    def __init__(self, pool_size=POOL_SIZE, timeout=DEFAULT_TIMEOUT):
+        self.timeout = timeout
+        self.unretrieved_results = list()
+        self.pool = multiprocessing.Pool(processes=pool_size)
+
+    async def scan(self, *args, **kwargs):
+        """
+        Same as Scanner but wraps scanner() into a multiprocessing Process.
         """
         if await maybe_coroutine(self.check, *args, **kwargs):
             args, kwargs = await maybe_coroutine(self.reformat, *args, **kwargs)
@@ -88,3 +106,16 @@ class Scanner:
         # if it times out before returning a result
         self.unretrieved_results.append(result)
         return ScanResults.timed_out
+
+
+class AsyncScanner(Scanner):
+    """
+    Focuses on efficiency for IO-related checks.
+    """
+
+# todo is this any different from Scanner ?
+
+
+
+
+
