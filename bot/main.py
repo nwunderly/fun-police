@@ -1,11 +1,15 @@
 
 import aiohttp
+import yaml
+from collections import defaultdict
 
 # custom imports
 from utils.helpers import setup_logger
 from bot.backend import Astley
 from scanners.scanner import ScanResults
 from scanners import urlchecker
+
+from utils.patterns import url, youtube
 
 
 logger = setup_logger("Rick")
@@ -16,10 +20,10 @@ class Rick(Astley):
     A bot that detects and warns you about possible Rick rolls.
     """
     def __init__(self):
-        super().__init__(command_prefix="rr!")
+        super().__init__(command_prefix="!!")
         self.scanners = list()
-        self.url_patterns = dict()
-        self.youtube_url_patterns = dict()
+        self.url_patterns = url
+        self.youtube_url_patterns = youtube
 
     async def on_message(self, message):
         if message.author == self.user:
@@ -37,13 +41,13 @@ class Rick(Astley):
 
     async def process_rick_rolls(self, message):
         logger.debug(f"Checking message {message.id}.")
-        status = ""
+        status = f"Results from message `{message.id}`\n"
         identified_urls = await self.process_urls(message.content)
-        status += f"RESULTS FROM URL REGEX\n"
-        resolved_urls = await self.process_redirects(identified_urls)
-        status += f"RESULTS FROM REDIRECT CHASING\n"
+        status += f"\nIdentified URLs:\n{yaml.dump(identified_urls)}"
+        resolved_urls = await self.process_redirects(identified_urls.values())
+        status += f"\nURLs after redirect processing:\n{yaml.dump(resolved_urls)}"
         identified_youtube = await self.process_youtube_urls(resolved_urls)
-        status += f"RESULTS FROM YOUTUBE REDIRECTS\n"
+        status += f"\nIdentified YouTube URLs:\n{yaml.dump(identified_youtube)}"
 
         await message.channel.send(status)
 
@@ -64,24 +68,38 @@ class Rick(Astley):
         matches = dict()
         for name, pattern in self.url_patterns.items():
             match_list = pattern.finditer(content)
-            matches[name] = [match.group(0) for match in match_list]
+            matches[name] = [str(match.group(0)) for match in match_list]
         return matches
 
     async def process_redirects(self, urls):
         resolved = list()
+        checked_urls = list()
         async with aiohttp.ClientSession() as session:
-            for url in urls:
-                async with session.head(url, allow_redirects=True) as response:
-                    resolved.append(response.url.human_repr())
+            for _url_list in urls:
+                for _url in _url_list:
+                    if _url not in checked_urls:
+                        try:
+                            if not _url.startswith('http'):
+                                _url = 'http://' + _url
+                            async with session.head(_url, allow_redirects=True) as response:
+                                resolved_url = response.url.human_repr()
+                                if resolved_url not in checked_urls:
+                                    resolved.append(resolved_url)
+                                    checked_urls.append(resolved_url)
+                        except aiohttp.InvalidURL:
+                            pass
+                        checked_urls.append(_url)
         return resolved
 
     async def process_youtube_urls(self, urls):
-        matches = dict()
+        matches = defaultdict(list)
         for name, pattern in self.youtube_url_patterns.items():
-            match = pattern.fullmatch(urls)
-            if match:
-                logger.debug(f"Matched YouTube URL: {match.group(0)}")
-                matches[name] = match.group(0)
+            for url in urls:
+                match = pattern.fullmatch(url)
+                if match:
+                    logger.debug(f"Matched YouTube URL: {match.group(0)}")
+                    matches[name].append(match.group(0))
+        return matches
 
     async def process_results(self, results):
         """
@@ -94,7 +112,8 @@ class Rick(Astley):
         return False
 
     async def setup(self):
-        self.scanners.append(urlchecker.URLChecker())
+        pass
+        # self.scanners.append(urlchecker.URLChecker())
 
 
 

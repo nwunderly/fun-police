@@ -22,8 +22,8 @@ class Debug(commands.Cog):
         await self.bot.close()
 
     @commands.command()
-    async def __test(self, ctx):
-        await ctx.send("hello.")
+    async def test(self, ctx):
+        await self.bot.process_rick_rolls(ctx.message)
 
 
 def start(debug):
