@@ -35,8 +35,8 @@ class Astley(commands.AutoShardedBot):
         """
         logger.info('Logged in as {0.user}.'.format(self))
 
-    async def on_command(self, ctx):
-        logger.info(f"Command {ctx.command.name} invoked by user {ctx.author.id} in channel {ctx.channel.id}, guild {ctx.guild.id}.")
+    async def on_command_completion(self, ctx):
+        logger.info(f"Command '{ctx.command.qualified_name}' invoked by user {ctx.author.id} in channel {ctx.channel.id}, guild {ctx.guild.id}.")
 
     async def setup(self):
         """

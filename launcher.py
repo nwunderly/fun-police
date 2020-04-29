@@ -21,10 +21,6 @@ class Debug(commands.Cog):
         await ctx.send("Closing bot.")
         await self.bot.close()
 
-    @commands.command()
-    async def test(self, ctx):
-        await self.bot.process_rick_rolls(ctx.message)
-
 
 def start(debug):
     logger.info(f"Starting bot.")
