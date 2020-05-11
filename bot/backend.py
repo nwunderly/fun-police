@@ -1,8 +1,10 @@
 from discord.ext import commands
+from discord.ext import tasks
 
 import signal
 import asyncio
 import datetime
+import sdnotify
 
 # custom imports
 from utils.helpers import setup_logger
@@ -19,6 +21,8 @@ class Astley(commands.AutoShardedBot):
         super().__init__(*args, **kwargs)
         self.loggers = dict()
         self._exit_code = 0
+        self._sd_notifier = sdnotify.SystemdNotifier()
+        self.sd_ready()
         self.started_at = datetime.datetime.now()
         logger.debug(f"Initialization complete.")
 
@@ -37,6 +41,18 @@ class Astley(commands.AutoShardedBot):
 
     async def on_command_completion(self, ctx):
         logger.info(f"Command '{ctx.command.qualified_name}' invoked by user {ctx.author.id} in channel {ctx.channel.id}, guild {ctx.guild.id}.")
+
+    def sd_notify(self, text):
+        logger.debug(f"Sending sd_notify: {text}")
+        self._sd_notifier.notify(text)
+
+    def sd_ready(self):
+        self.sd_notify("READY=1")
+        self.sd_notify("WATCHDOG=1")
+
+    @tasks.loop(seconds=1)
+    async def sd_watchdog(self):
+        self.sd_notify("WATCHDOG=1")
 
     async def setup(self):
         """
