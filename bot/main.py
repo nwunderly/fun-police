@@ -6,9 +6,6 @@ from collections import defaultdict
 # custom imports
 from utils.helpers import setup_logger
 from bot.backend import Astley
-from scanners.scanner import ScanResults
-from scanners import urlchecker
-
 from utils import patterns
 
 

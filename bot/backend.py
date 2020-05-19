@@ -7,6 +7,7 @@ import datetime
 import sdnotify
 
 # custom imports
+from utils.db import AsyncRedis
 from utils.helpers import setup_logger
 from confidential import authentication
 
@@ -24,6 +25,7 @@ class Astley(commands.AutoShardedBot):
         self._sd_notifier = sdnotify.SystemdNotifier()
         self.sd_ready()
         self.started_at = datetime.datetime.now()
+        self.redis = AsyncRedis()
         logger.debug(f"Initialization complete.")
 
     async def try_run(self, coro):
