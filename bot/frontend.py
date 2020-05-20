@@ -145,6 +145,12 @@ class Rick(Astley):
             # todo: remove this when putting it into on_message
             await message.channel.send("No rick rolls detected.")
 
+        # write new rick rolls to Redis
+        # todo: cache non-rick-rolls too
+        for url, check_name in rick_rolls.items():
+            if check_name != 'redis':
+                await self.redis.url_set(url, True, check_name)
+
     async def setup(self):
         self.load_extension('utils.testing')
 
