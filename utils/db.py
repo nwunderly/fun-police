@@ -5,6 +5,9 @@ import redis
 import aredis
 
 import datetime
+import logging
+
+logger = logging.getLogger('utils.db')
 
 
 """
@@ -66,15 +69,23 @@ class AsyncRedis(aredis.StrictRedis):
     def __init__(self):
         super().__init__(host='localhost', port=6379, db=0)
 
-    async def url_set(self, url, is_rick_roll, *args, **kwargs):
+    async def url_set(self, url, is_rick_roll, detected_by, *args, **kwargs):
         """
         Modified implementation of set() that handles metadata for items.
         """
-        data = {'is_rick_roll': is_rick_roll, 'timestamp': str(datetime.datetime.now()), 'verified': False}
+        data = {
+            'is_rick_roll': is_rick_roll,
+            'timestamp': str(datetime.datetime.now()),
+            'detected_by': detected_by,
+            'verified': False}
         await self.set(url, data, *args, **kwargs)
 
     async def url_get(self, url):
-        data = eval((await self.get(url)).decode())
+        response = await self.get(url)
+        if response:
+            data = eval(response).decode()
+        else:
+            return None
         if isinstance(data, dict):
             is_rick_roll = data.get('is_rick_roll')
             return is_rick_roll

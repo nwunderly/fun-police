@@ -4,6 +4,8 @@ import datetime
 import sys
 import asyncio
 
+logger = logging.getLogger('utils.helpers')
+
 
 def setup_logger(name):
     logger = logging.getLogger(name)

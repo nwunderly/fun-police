@@ -3,16 +3,14 @@ import aiohttp
 import re
 import time
 import traceback
+import logging
 
 import discord
 from discord.ext import commands
-
 from utils.soup import YouTubeClient
+from utils.patterns import rick_roll_pattern
 
-
-rick_roll_pattern = re.compile(
-    r"""(?:(?:never[^\n\w]*(?:gonna[^\n\w]*)?)?(?:give[^\n\w]*you[^\n\w]*up|let[^\n\w]*you[^\n\w]*down))|rick[^\n\w]*roll"""
-)
+logger = logging.getLogger('utils.testing')
 
 
 class Testing(commands.Cog):
@@ -121,6 +119,10 @@ class Testing(commands.Cog):
         except Exception as e:
             traceback.print_exception(e.__class__, e, e.__traceback__)
             await ctx.send(f"{e.__class__}: {str(e)}")
+
+    @commands.command()
+    async def process_rick_rolls(self, ctx):
+        await self.bot.process_rick_rolls(ctx.message)
 
 
 def setup(bot):

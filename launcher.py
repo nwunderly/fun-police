@@ -1,14 +1,18 @@
 
 import sys
+import logging
 from argparse import ArgumentParser
 
 from discord.ext import commands
 
 # custom imports
 from utils.helpers import setup_logger
-from bot.main import Rick
+from bot.frontend import Rick
 
-logger = setup_logger("launcher")
+
+logger = logging.getLogger("launcher")
+setup_logger('bot')
+setup_logger('utils')
 
 
 class Debug(commands.Cog):

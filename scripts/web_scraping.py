@@ -2,6 +2,8 @@
 import requests
 from bs4 import BeautifulSoup
 
+import sys
+
 
 class YouTubeClient:
 
@@ -25,7 +27,8 @@ class YouTubeClient:
 def main():
     client = YouTubeClient()
     html = client.get_page('https://www.youtube.com/watch?v=kR0gOEyK6Tg')
-    client.get_page_info(html)
+    # client.get_page_info(html)
+    print(sys.getsizeof(html))
 
 
 if __name__ == "__main__":

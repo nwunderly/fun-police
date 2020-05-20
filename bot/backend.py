@@ -5,13 +5,13 @@ import signal
 import asyncio
 import datetime
 import sdnotify
+import logging
 
 # custom imports
 from utils.db import AsyncRedis
-from utils.helpers import setup_logger
 from confidential import authentication
 
-logger = setup_logger("Astley")
+logger = logging.getLogger('bot.astley')
 
 
 class Astley(commands.AutoShardedBot):
