@@ -1,7 +1,7 @@
 
 [Unit]
 
-Description=Richard Paul Astley
+Description=Fun Police
 
 StartLimitIntervalSec=5min
 StartLimitBurst=5
@@ -14,13 +14,13 @@ Environment=PYTHONUNBUFFERED=1
 
 Restart=on-failure
 
-TimeoutStopSec=30s
+#TimeoutStopSec=30s
 
-#Type=notify
+Type=notify
 
 User=rick
 
-#WatchdogSec=30s
+WatchdogSec=30s
 
 
 [Install]

@@ -1,7 +1,10 @@
 
 import asyncio
 import aiohttp
+import logging
 from bs4 import BeautifulSoup
+
+logger = logging.getLogger('utils.soup')
 
 
 class YouTubeClient:
