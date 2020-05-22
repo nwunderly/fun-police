@@ -2,7 +2,7 @@ import aiohttp
 import logging
 import yaml
 from bs4 import BeautifulSoup
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 # custom imports
 from bot.backend import Astley
@@ -11,6 +11,9 @@ from confidential import authentication
 
 logger = logging.getLogger("bot.frontend")
 
+RickRollData = namedtuple('RickRollData', ['check', 'extra'])
+# check is name of check (redis, soup, comments, etc)
+# extra is extra data (specific section for soup, percent of flagged comments, etc)
 
 class Rick(Astley):
     """
@@ -21,6 +24,7 @@ class Rick(Astley):
         self.url_pattern = url_pattern
         self.yt_pattern = yt_pattern
         self.rickroll_pattern = rickroll_pattern
+        self.comment_pattern = comment_pattern
         self.session = aiohttp.ClientSession()
         self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
 
@@ -34,7 +38,7 @@ class Rick(Astley):
             await self.process_private_messages(message)
         else:
             await self.process_commands(message)
-            # await self.process_rick_rolls(message) todo: add this back
+            # result = await self.process_rick_rolls(message) todo: add this back
 
     async def process_private_messages(self, message):
         msg = f"Received private message from {message.author} ({message.author.id}) - {message.clean_content}"
@@ -51,7 +55,7 @@ class Rick(Astley):
     def strip_url(url):
         return url.replace('http://', '').replace('https://', '')
 
-    async def resolve(self, *urls):
+    async def _resolve(self, *urls):
         """Deprecated"""
         resolved = set()
         async with aiohttp.ClientSession() as session:
@@ -66,7 +70,15 @@ class Rick(Astley):
                     pass
         return resolved
 
+    async def process_results(self, message, rick_rolls: dict):
+        await message.channel.send(str(rick_rolls))
+
     async def process_rick_rolls(self, message):
+        """
+        Returns list of dicts, one for each URL detected.
+        :param message: discord Message object to be checked.
+        :return: list of dicts, each with "is_rick_roll" and "extra" fields.
+        """
         logger.debug(f"Checking message {message.id}.")
         rick_rolls = dict()  # key: url, value: name of first check that caught this url
 
@@ -78,11 +90,37 @@ class Rick(Astley):
 
         # check redis cache
         # redis will have them cached without the http:// part
+        rick_rolls, urls = await self.check_redis(rick_rolls, urls)
+
+        # handle redirects
+        responses = await self.resolve(urls)  # returns list of Response objects
+
+        # check for YouTube URLs
+        # todo: non-youtube URLs should scrape and check for embedded YouTube video
+        responses = self.filter_youtube(responses)
+
+        # download YouTube pages and check with rick roll regex
+        rick_rolls, urls = await self.check_youtube_html(rick_rolls, responses)
+
+        # check comments for any YouTube URLs that haven't already been flagged
+        rick_rolls = await self.check_comments(rick_rolls, urls)
+
+        if rick_rolls:
+            await self.process_results(message, rick_rolls)
+
+        # write new rick rolls to Redis
+        # todo: cache non-rick-rolls too
+        for url, data in rick_rolls.items():
+            if data.check != 'redis':
+                url = url.replace('http://', '').replace('https://', '')
+                await self.redis.url_set(url, True, data.check, data.extra)
+
+    async def check_redis(self, rick_rolls, urls):
         for url in list(urls):
             url = self.strip_url(url)
             redis = await self.redis.url_get(url)
             if redis is True:  # it's a cached rick roll
-                rick_rolls[url] = 'redis'  # makes note that this is a rick roll along with the check that found it
+                rick_rolls[url] = RickRollData('redis', None)  # makes note that this is a rick roll along with the check that found it
                 urls.remove(url)  # no longer needs to be checked
             elif redis is False:  # it's a cached non-rick-roll
                 urls.remove(url)  # it's been confirmed false, no longer needs to be checked
@@ -90,8 +128,12 @@ class Rick(Astley):
                 continue
             else:
                 logger.error(f"Database error, invalid result for URL: {url}")
+        return rick_rolls, urls
 
-        # handle redirects
+    async def resolve(self, urls):
+        """
+        Takes list of URL strings and returns list of Response objects with resolved URLs.
+        """
         resolved = set()
         responses = list()  # list of response objects to be passed on to next part
         for url in list(urls):
@@ -108,17 +150,27 @@ class Rick(Astley):
                     response.close()
             except aiohttp.InvalidURL:
                 pass
+            return responses
 
-        # check for YouTube URLs
-        # todo: non-youtube URLs should scrape and check for embedded YouTube video
+    def filter_youtube(self, responses):
+        """
+        Removes non-youtube URLs from list of Response objects
+        """
         for response in list(responses):
             match = self.yt_pattern.fullmatch(response.url.human_repr())
             if not match:
                 # await response.release()
                 response.close()
                 responses.remove(response)  # removes if not youtube, otherwise leaves it
+        return responses
 
-        # download YouTube pages and check with rick roll regex
+    async def check_youtube_html(self, rick_rolls, responses):
+        """
+        Uses web scraping to check YouTube page title, video title, and video description
+        Returns updated rick roll data and URLs that tested negative (to be checked using YouTube API)
+        """
+        urls = list()
+
         for response in responses:
 
             # PARTIAL READ IS CURRENTLY BROKEN - DO NOT USE
@@ -130,49 +182,45 @@ class Rick(Astley):
             soup = BeautifulSoup(html, features="html.parser")
 
             # check page title
-            if len(list(rick_roll_pattern.finditer(soup.head.title.text.lower()))) > 0:
-                rick_rolls[response.url] = 'soup-pagetitle'
+            if len(list(rickroll_pattern.finditer(soup.head.title.text.lower()))) > 0:
+                rick_rolls[response.url] = RickRollData('soup', 'page-title')
 
             # check video title
-            elif len(list(rick_roll_pattern.finditer(soup.find(id='eow-title').text))) > 0:
-                rick_rolls[response.url] = 'soup-title'
+            elif len(list(rickroll_pattern.finditer(soup.find(id='eow-title').text))) > 0:
+                rick_rolls[response.url] = RickRollData('soup', 'video-title')
 
             # check video description
-            elif len(list(rick_roll_pattern.finditer(soup.find(id='eow-description').text))) > 0:
-                rick_rolls[response.url] = 'soup-description'
+            elif len(list(rickroll_pattern.finditer(soup.find(id='eow-description').text))) > 0:
+                rick_rolls[response.url] = RickRollData('soup', 'video-description')
 
-        if rick_rolls:
-            await message.channel.send(str(rick_rolls))
-        else:
-            comment_percentage = await self.process_comments(response.url)
-            if comment_percentage > 4:
-                await message.channel.send(f"{matches}% comments flagged as suspicious, video is rickroll")
             else:
-                return
-
-        # write new rick rolls to Redis
-        # todo: cache non-rick-rolls too
-        for url, check_name in rick_rolls.items():
-            if check_name != 'redis':
-                await self.redis.url_set(url, True, check_name)
+                urls.append(response.url)
+        return rick_rolls, urls
                 
-    async def process_comments(self, url):
-        comment_data = await self.get_comments(url)
-        matches = self.parse_comments(comment_data)
-        return f"{matches}% comments flagged as suspicious." if matches > 5 else None
+    async def check_comments(self, rick_rolls, urls):
+        for url in urls:
+            comments = await self.get_comments(url)
+            is_rick_roll, percent, count = self.parse_comments(comments)
+            if is_rick_roll:
+                rick_rolls[url] = RickRollData('comments', {'percent': percent, 'count': count})
+        return rick_rolls
     
-    async def get_comments(self, url)
+    async def get_comments(self, url):
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.data_size}&key={authentication().YOUTUBE_API_KEY}") as response:
-                return (await response.json())
+            async with session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.data_size}&key={authentication.YOUTUBE_API_KEY}") as response:
+                return await response.json()
             
-    def parse_comments(self, comment_data):
-        matches_found = 0
-        for i in self.comments:
-            m = self.generic_rickroll_regex.search(i)
+    def parse_comments(self, comments):
+        count = 0
+        for i in comments:
+            m = self.comment_pattern.search(i)
             if m:
-                matches_found += 1
-        return ((matches_found / len(self.comments)) * len(self.comments))
+                count += 1
+        percent = (count / len(comments)) * 100
+        if percent > 15 or count > 5:
+            return True, percent, count
+        else:
+            return False, percent, count
 
     async def setup(self):
         self.load_extension('utils.testing')

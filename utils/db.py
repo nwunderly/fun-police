@@ -69,7 +69,7 @@ class AsyncRedis(aredis.StrictRedis):
     def __init__(self):
         super().__init__(host='localhost', port=6379, db=0)
 
-    async def url_set(self, url, is_rick_roll, detected_by, *args, **kwargs):
+    async def url_set(self, url, is_rick_roll, detected_by, extra, *args, **kwargs):
         """
         Modified implementation of set() that handles metadata for items.
         """
@@ -77,6 +77,7 @@ class AsyncRedis(aredis.StrictRedis):
             'is_rick_roll': is_rick_roll,
             'timestamp': str(datetime.datetime.now()),
             'detected_by': detected_by,
+            'extra': extra,
             'verified': False}
         await self.set(url, data, *args, **kwargs)
 
