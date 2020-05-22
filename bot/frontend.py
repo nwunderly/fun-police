@@ -7,7 +7,7 @@ from collections import defaultdict
 # custom imports
 from bot.backend import Astley
 from utils.patterns import *
-
+from confidential import authentication
 
 logger = logging.getLogger("bot.frontend")
 
@@ -20,7 +20,9 @@ class Rick(Astley):
         super().__init__(command_prefix="!!")
         self.url_pattern = url_pattern
         self.yt_pattern = yt_pattern
+        self.rickroll_pattern = rickroll_pattern
         self.session = aiohttp.ClientSession()
+        self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
 
     async def cleanup(self):
         await self.session.close()
@@ -142,14 +144,35 @@ class Rick(Astley):
         if rick_rolls:
             await message.channel.send(str(rick_rolls))
         else:
-            # todo: remove this when putting it into on_message
-            await message.channel.send("No rick rolls detected.")
+            comment_percentage = await self.process_comments(response.url)
+            if comment_percentage > 4:
+                await message.channel.send(f"{matches}% comments flagged as suspicious, video is rickroll")
+            else:
+                return
 
         # write new rick rolls to Redis
         # todo: cache non-rick-rolls too
         for url, check_name in rick_rolls.items():
             if check_name != 'redis':
                 await self.redis.url_set(url, True, check_name)
+                
+    async def process_comments(self, url):
+        comment_data = await self.get_comments(url)
+        matches = self.parse_comments(comment_data)
+        return f"{matches}% comments flagged as suspicious." if matches > 5 else None
+    
+    async def get_comments(self, url)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.data_size}&key={authentication().YOUTUBE_API_KEY}") as response:
+                return (await response.json())
+            
+    def parse_comments(self, comment_data):
+        matches_found = 0
+        for i in self.comments:
+            m = self.generic_rickroll_regex.search(i)
+            if m:
+                matches_found += 1
+        return ((matches_found / len(self.comments)) * len(self.comments))
 
     async def setup(self):
         self.load_extension('utils.testing')
