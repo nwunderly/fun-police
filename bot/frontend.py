@@ -23,6 +23,7 @@ class Rick(Astley):
         self.rickroll_pattern = rickroll_pattern
         self.session = aiohttp.ClientSession()
         self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
+        self.data_size = 100
 
     async def cleanup(self):
         await self.session.close()
