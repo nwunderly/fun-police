@@ -4,6 +4,7 @@ import re
 import time
 import traceback
 import logging
+import copy
 
 import discord
 from discord.ext import commands
@@ -15,6 +16,7 @@ logger = logging.getLogger('utils.testing')
 class Testing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.stats = {'correct': set(), 'total': set()}
 
     @commands.command()
     async def regex_url(self, ctx):
@@ -105,7 +107,7 @@ class Testing(commands.Cog):
     @commands.command()
     async def redis_set(self, ctx, url, is_rick_roll: bool):
         try:
-            await self.bot.redis.url_set(url, is_rick_roll)
+            await self.bot.redis.url_set(url, is_rick_roll, 'manual', None)
             await ctx.send("Done.")
         except Exception as e:
             traceback.print_exception(e.__class__, e, e.__traceback__)
@@ -121,8 +123,40 @@ class Testing(commands.Cog):
             await ctx.send(f"{e.__class__}: {str(e)}")
 
     @commands.command()
+    async def redis_del(self, ctx, *urls):
+        try:
+            await self.bot.redis.delete(urls)
+            await ctx.send("Done.")
+        except Exception as e:
+            traceback.print_exception(e.__class__, e, e.__traceback__)
+            await ctx.send(f"{e.__class__}: {str(e)}")
+
+    @commands.command()
     async def process_rick_rolls(self, ctx):
         await self.bot.process_rick_rolls(ctx.message)
+
+    @commands.command(aliases=['a'])
+    async def accuracy_test(self, ctx, url, is_rick_roll: bool = True):
+        message = copy.copy(ctx.message)
+        message.content = url
+
+        guess = await self.bot.process_rick_rolls(message)
+
+        if guess == is_rick_roll:
+            self.stats['correct'].add(url)
+            correct_guess = True
+        else:
+            correct_guess = False
+        self.stats['total'].add(url)
+        percent = str(len(self.stats['correct'])/len(self.stats['total'])*100) + '%' if len(self.stats['total']) != 0 else 'undefined'
+        await ctx.send(f"Bot guessed {guess}, should be {is_rick_roll}.\n"
+                       f"{'Correct' if correct_guess else 'Incorrect'} guess for {'' if is_rick_roll else 'non-'}rick-roll.\n"
+                       f"{len(self.stats['correct'])}/{len(self.stats['total'])} guesses correct. ({percent})")
+
+    @commands.command()
+    async def stats(self, ctx):
+        percent = str(len(self.stats['correct'])/len(self.stats['total'])*100) + '%' if len(self.stats['total']) != 0 else 'undefined'
+        await ctx.send(f"{len(self.stats['correct'])}/{len(self.stats['total'])} guesses correct. ({percent})")
 
 
 def setup(bot):

@@ -9,6 +9,6 @@ rickroll_pattern = re.compile(
     r"""(?:(?:never[^\n\w]*(?:gonna[^\n\w]*)?)?(?:give[^\n\w]*you[^\n\w]*up|let[^\n\w]*you[^\n\w]*down))|rick[^\n\w]*roll"""
 )
 
-comment_pattern = re.compile(r"""PATTERN HERE""")
+comment_pattern = re.compile(r"""(([nN]ever.*[gG]onna.*(give.*you.*up.*|let.*you.*down.*)|[rR]ick[^\n\w]?[rR]oll(e?d|ing|s|\'d)?)|wait*?\s*this\s*isn\'?t\s*[a-zA-Z\s]+|[rR]ick\s*[aA]stley\s*|([bB]ut)?\s*([tT]he)?[lL]ink\s*[sS](a|e)(id|yd|d)\s*[a-zA-Z\s]+)""")
 
 

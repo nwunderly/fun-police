@@ -84,7 +84,7 @@ class AsyncRedis(aredis.StrictRedis):
     async def url_get(self, url):
         response = await self.get(url)
         if response:
-            data = eval(response).decode()
+            data = eval(response.decode())
         else:
             return None
         if isinstance(data, dict):

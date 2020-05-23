@@ -15,6 +15,7 @@ RickRollData = namedtuple('RickRollData', ['check', 'extra'])
 # check is name of check (redis, soup, comments, etc)
 # extra is extra data (specific section for soup, percent of flagged comments, etc)
 
+
 class Rick(Astley):
     """
     A bot that detects and warns you about possible Rick rolls.
@@ -54,6 +55,7 @@ class Rick(Astley):
 
     @staticmethod
     def strip_url(url):
+        url = url if isinstance(url, str) else url.human_repr()
         return url.replace('http://', '').replace('https://', '')
 
     async def _resolve(self, *urls):
@@ -87,7 +89,7 @@ class Rick(Astley):
         urls = self.get_urls(message.content)  # this will be a list
 
         # remove duplicate URLs by stripping "http://" and passing through set()
-        urls = set([url.replace('http://', '').replace('https://', '') for url in urls])
+        urls = set([self.strip_url(url) for url in urls])
 
         # check redis cache
         # redis will have them cached without the http:// part
@@ -113,8 +115,10 @@ class Rick(Astley):
         # todo: cache non-rick-rolls too
         for url, data in rick_rolls.items():
             if data.check != 'redis':
-                url = url.replace('http://', '').replace('https://', '')
+                url = self.strip_url(url)
                 await self.redis.url_set(url, True, data.check, data.extra)
+
+        return bool(rick_rolls)
 
     async def check_redis(self, rick_rolls, urls):
         for url in list(urls):
@@ -157,7 +161,7 @@ class Rick(Astley):
         """
         Removes non-youtube URLs from list of Response objects
         """
-        for response in list(responses):
+        for response in (list(responses) if responses else []):
             match = self.yt_pattern.fullmatch(response.url.human_repr())
             if not match:
                 # await response.release()
@@ -172,7 +176,7 @@ class Rick(Astley):
         """
         urls = list()
 
-        for response in responses:
+        for response in (list(responses) if responses else []):
 
             # PARTIAL READ IS CURRENTLY BROKEN - DO NOT USE
             # data = await response.content.read(10**6)  # reads up to 1 megabyte
@@ -199,22 +203,28 @@ class Rick(Astley):
         return rick_rolls, urls
                 
     async def check_comments(self, rick_rolls, urls):
+        urls = [url if isinstance(url, str) else url.human_repr() for url in urls]
         for url in urls:
             comments = await self.get_comments(url)
+            # print(type(items), len(items), items)
+            # print(items[0].keys())
             is_rick_roll, percent, count = self.parse_comments(comments)
             if is_rick_roll:
                 rick_rolls[url] = RickRollData('comments', {'percent': percent, 'count': count})
         return rick_rolls
     
     async def get_comments(self, url):
+        url = url if isinstance(url, str) else url.human_repr()
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.data_size}&key={authentication.YOUTUBE_API_KEY}") as response:
-                return await response.json()
+                json = await response.json()
+                return [str(item['snippet']) for item in (i := json.get('items')) if i]
+                # return json
             
     def parse_comments(self, comments):
         count = 0
         for i in comments:
-            m = self.comment_pattern.search(i)
+            m = len(list(comment_pattern.finditer(i.lower())))
             if m:
                 count += 1
         percent = (count / len(comments)) * 100
