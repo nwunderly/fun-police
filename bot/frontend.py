@@ -201,6 +201,7 @@ class Rick(Astley):
                 url = self.strip_url(response.url)
                 rick_rolls[url] = RickRollData('soup', 'video-description')
 
+            # check SME recommended video (youtube automatically adds this when it detects a song)
             elif len(list(rickroll_pattern.finditer(soup.find('ul', {'class': 'watch-extras-section'}).text.lower()))) > 0:
                 url = self.strip_url(response.url.human_repr())
                 rick_rolls[url] = RickRollData('soup', 'recommended')
@@ -210,26 +211,32 @@ class Rick(Astley):
         return rick_rolls, urls
                 
     async def check_comments(self, rick_rolls, urls):
+        """
+        Uses YouTube API to pull up to 100 top comments and checks for clues using regex.
+        """
         urls = [url if isinstance(url, str) else url.human_repr() for url in urls]
         for url in urls:
             comments = await self.get_comments(url)
-            # print(type(items), len(items), items)
-            # print(items[0].keys())
             is_rick_roll, percent, count = self.parse_comments(comments)
             if is_rick_roll:
                 rick_rolls[self.strip_url(url)] = RickRollData('comments', {'percent': percent, 'count': count})
         return rick_rolls
     
     async def get_comments(self, url):
+        """
+        Pulls video comments using HTTP request to YouTube API.
+        """
         url = url if isinstance(url, str) else url.human_repr()
         async with self.session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.data_size}&key={authentication.YOUTUBE_API_KEY}") as response:
             json = await response.json()
             i = json.get('items')
             i = i if i else []
             return [str(item['snippet']) for item in i]
-            # return json
-            
+
     def parse_comments(self, comments):
+        """
+        Runs regex search on list of comments and returns count/percent of matches.
+        """
         count = 0
         for i in comments:
             m = len(list(comment_pattern.finditer(i.lower())))
@@ -242,6 +249,7 @@ class Rick(Astley):
             return False, percent, count
 
     async def setup(self):
-        self.load_extension('utils.testing')
+        self.load_extension('cogs.testing')
+        # self.load_extension('cogs.admin')
 
 

@@ -11,12 +11,12 @@ import logging
 from utils.db import AsyncRedis
 from confidential import authentication
 
-logger = logging.getLogger('bot.astley')
+logger = logging.getLogger('bot.backend')
 
 
 class Astley(commands.AutoShardedBot):
     """
-    Base class that handles backend event loop stuff
+    Base class that hides stupid event loop and systemd stuff.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

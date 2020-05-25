@@ -8,6 +8,8 @@ r.set('foo', 'bar')
 print(r.get('foo'))
 # b'bar'
 
+for key in r.scan_iter():
+    print(key)
 
 
 

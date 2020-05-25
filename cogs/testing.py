@@ -13,7 +13,7 @@ from utils.soup import YouTubeClient
 from utils.patterns import rickroll_pattern
 from confidential.authentication import YOUTUBE_API_KEY
 
-logger = logging.getLogger('utils.testing')
+logger = logging.getLogger('cogs.testing')
 
 
 class Testing(commands.Cog):
@@ -21,6 +21,9 @@ class Testing(commands.Cog):
         self.bot = bot
         self.table = boto3.resource('dynamodb').Table('Rick')
         self.stats = {'correct': set(), 'total': set()}
+
+    def cog_check(self, ctx):
+        return ctx.author.id in [448250281097035777, 204414611578028034]
 
     @commands.command()
     async def regex_url(self, ctx):
@@ -46,67 +49,6 @@ class Testing(commands.Cog):
             await ctx.send(str(e))
             return
         await ctx.send(url)
-
-    @commands.command()
-    async def check(self, ctx, url):
-        """Tests Rick Roll regex on a YouTube page's data and returns the result."""
-        async with aiohttp.ClientSession() as session:
-            client = YouTubeClient(session)
-            data = await client.get_data(url)
-        s = "Results:\n"
-        for name, item in data.items():
-            match_or_no_match = "MATCH" if len(list(rickroll_pattern.finditer(item.lower()))) > 0 else "NO MATCH"
-            s += f"{name}: {match_or_no_match}\n"
-        await ctx.send(s)
-
-    # @commands.command()
-    # async def full_check(self, ctx):
-    #     """URL regex -> redirect handling -> YouTube regex -> Page processing"""
-    #
-    #     t0 = time.monotonic()
-    #     matches = list(self.bot.url_pattern.finditer(ctx.message.content))
-    #     _matches = set([f"<{match.group(0)}>" for match in matches])
-    #     dt0 = (time.monotonic()-t0)*1000
-    #     s = f"URL Results: ({dt0:.3}ms)\n" + "\n".join(_matches) + "\n"
-    #     await ctx.send(str(s))
-    #
-    #     t1 = time.monotonic()
-    #     to_resolve = [match.group(0) for match in matches]
-    #     resolved = await self.bot.resolve(*to_resolve)
-    #     _resolved = set([f"<{url}>" for url in resolved])
-    #     dt1 = (time.monotonic()-t1)*1000
-    #     s = f"Resolved URLs: ({dt1:.3}ms)\n" + "\n".join(_resolved) + "\n"
-    #     await ctx.send(str(s))
-    #
-    #     t2 = time.monotonic()
-    #     yt_matches = set()
-    #     for url in resolved:
-    #         match = self.bot.yt_pattern.fullmatch(url)
-    #         if match:
-    #             yt_matches.add(match.group(0))
-    #     _yt_matches = [f"<{url}>" for url in yt_matches]
-    #     dt2 = (time.monotonic()-t2)*1000
-    #     s = f"YouTube URLs: ({dt2:.3}ms)\n" + "\n".join(yt_matches) + "\n"
-    #     await ctx.send(s)
-    #
-    #     t3 = time.monotonic()
-    #     rick_rolls = dict()
-    #     async with aiohttp.ClientSession() as session:
-    #         for url in yt_matches:
-    #             client = YouTubeClient(session)
-    #             data = await client.get_data(url)
-    #             rick_rolls[url] = data
-    #     s = ""
-    #     for url, data in rick_rolls.items():
-    #         s += f"<{url}>\n"
-    #         for name, item in data.items():
-    #             match_or_no_match = "MATCH" if len(list(rick_roll_pattern.finditer(item.lower()))) > 0 else "NO MATCH"
-    #             s += f"    {name}: {match_or_no_match}\n"
-    #     dt3 = (time.monotonic()-t3)*1000
-    #     dtnet = (time.monotonic()-t0)*1000
-    #     s = f"Rick Rolls: ({dt3:.3}ms)\n" + s
-    #     await ctx.send(s)
-    #     await ctx.send(f"Total time: {dt0 + dt1 + dt2 + dt3:.3}ms | {dtnet:.3}ms")
 
     @commands.command()
     async def redis_set(self, ctx, url, is_rick_roll: bool):

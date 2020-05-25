@@ -11,8 +11,10 @@ from bot.frontend import Rick
 
 
 logger = logging.getLogger("launcher")
+setup_logger('launcher')
 setup_logger('bot')
 setup_logger('utils')
+setup_logger('cogs')
 
 
 class Debug(commands.Cog):
