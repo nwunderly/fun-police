@@ -9,8 +9,6 @@ import boto3
 
 import discord
 from discord.ext import commands
-from utils.soup import YouTubeClient
-from utils.patterns import rickroll_pattern
 from confidential.authentication import YOUTUBE_API_KEY
 
 logger = logging.getLogger('cogs.testing')
@@ -49,33 +47,6 @@ class Testing(commands.Cog):
             await ctx.send(str(e))
             return
         await ctx.send(url)
-
-    @commands.command()
-    async def redis_set(self, ctx, url, is_rick_roll: bool):
-        try:
-            await self.bot.redis.url_set(url, is_rick_roll, 'manual', None)
-            await ctx.send("Done.")
-        except Exception as e:
-            traceback.print_exception(e.__class__, e, e.__traceback__)
-            await ctx.send(f"{e.__class__}: {str(e)}")
-
-    @commands.command()
-    async def redis_get(self, ctx, url):
-        try:
-            is_rick_roll = await self.bot.redis.url_get(url)
-            await ctx.send(str(is_rick_roll))
-        except Exception as e:
-            traceback.print_exception(e.__class__, e, e.__traceback__)
-            await ctx.send(f"{e.__class__}: {str(e)}")
-
-    @commands.command()
-    async def redis_del(self, ctx, *urls):
-        try:
-            await self.bot.redis.delete(urls)
-            await ctx.send("Done.")
-        except Exception as e:
-            traceback.print_exception(e.__class__, e, e.__traceback__)
-            await ctx.send(f"{e.__class__}: {str(e)}")
 
     @commands.command()
     async def process_rick_rolls(self, ctx):
