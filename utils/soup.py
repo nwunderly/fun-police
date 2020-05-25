@@ -23,6 +23,9 @@ class YouTubeClient:
         data['vid_title'] = result.text if result else ''
         result = soup.find(id='eow-description')
         data['vid_description'] = result.text if result else ''
+        ul = soup.find('ul', {'class': 'watch-extras-section'})
+        data['recommended'] = ul.find_all('li')[3].text if ul else ''
+        print(data)
         return data
 
     async def get_data(self, url):

@@ -5,10 +5,13 @@ import time
 import traceback
 import logging
 import copy
+import boto3
 
 import discord
 from discord.ext import commands
 from utils.soup import YouTubeClient
+from utils.patterns import rickroll_pattern
+from confidential.authentication import YOUTUBE_API_KEY
 
 logger = logging.getLogger('utils.testing')
 
@@ -16,6 +19,7 @@ logger = logging.getLogger('utils.testing')
 class Testing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.table = boto3.resource('dynamodb').Table('Rick')
         self.stats = {'correct': set(), 'total': set()}
 
     @commands.command()
@@ -43,17 +47,17 @@ class Testing(commands.Cog):
             return
         await ctx.send(url)
 
-    # @commands.command()
-    # async def check(self, ctx, url):
-    #     """Tests Rick Roll regex on a YouTube page's data and returns the result."""
-    #     async with aiohttp.ClientSession() as session:
-    #         client = YouTubeClient(session)
-    #         data = await client.get_data(url)
-    #     s = "Results:\n"
-    #     for name, item in data.items():
-    #         match_or_no_match = "MATCH" if len(list(rick_roll_pattern.finditer(item.lower()))) > 0 else "NO MATCH"
-    #         s += f"{name}: {match_or_no_match}\n"
-    #     await ctx.send(s)
+    @commands.command()
+    async def check(self, ctx, url):
+        """Tests Rick Roll regex on a YouTube page's data and returns the result."""
+        async with aiohttp.ClientSession() as session:
+            client = YouTubeClient(session)
+            data = await client.get_data(url)
+        s = "Results:\n"
+        for name, item in data.items():
+            match_or_no_match = "MATCH" if len(list(rickroll_pattern.finditer(item.lower()))) > 0 else "NO MATCH"
+            s += f"{name}: {match_or_no_match}\n"
+        await ctx.send(s)
 
     # @commands.command()
     # async def full_check(self, ctx):
@@ -157,6 +161,35 @@ class Testing(commands.Cog):
     async def stats(self, ctx):
         percent = str(len(self.stats['correct'])/len(self.stats['total'])*100) + '%' if len(self.stats['total']) != 0 else 'undefined'
         await ctx.send(f"{len(self.stats['correct'])}/{len(self.stats['total'])} guesses correct. ({percent})")
+
+    @commands.command()
+    async def check_playlists(self, ctx, *urls):
+        rick_rolls = 0
+        total = 0
+        for url in urls:
+            playlist_id = re.fullmatch(r"^((?:https?:)?//)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(/(?:[\w\-]+\?v=|embed/|v/)?)([\w\-]+)(\S+)?$", url).group(6)[6:]
+            request_url = f"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={playlist_id}&key={YOUTUBE_API_KEY}"
+            await ctx.send(playlist_id)
+            async with self.bot.session.get(request_url) as response:
+                json = await response.json()
+                print(json)
+            videos = json['items']
+            n = 0
+            for i, video in enumerate(videos):
+                total += 1
+                video_url = f"https://www.youtube.com/watch?v={video['snippet']['resourceId']['videoId']}"
+                message = copy.copy(ctx.message)
+                message.content = video_url
+                await ctx.send(f"Checking video {i}. (<{video_url}>)")
+                try:
+                    result = await self.bot.process_rick_rolls(message)
+                except:
+                    result = None
+                if result:
+                    n += 1
+                    rick_rolls += 1
+            await ctx.send(f"Found {n} rick rolls, playlist length {len(videos)}.")
+        await ctx.send(f"Found {rick_rolls} rick rolls, total playlist length {total}.")
 
 
 def setup(bot):

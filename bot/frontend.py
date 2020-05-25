@@ -188,15 +188,22 @@ class Rick(Astley):
 
             # check page title
             if len(list(rickroll_pattern.finditer(soup.head.title.text.lower()))) > 0:
-                rick_rolls[response.url] = RickRollData('soup', 'page-title')
+                url = self.strip_url(response.url)
+                rick_rolls[url] = RickRollData('soup', 'page-title')
 
             # check video title
-            elif len(list(rickroll_pattern.finditer(soup.find(id='eow-title').text))) > 0:
-                rick_rolls[response.url] = RickRollData('soup', 'video-title')
+            elif len(list(rickroll_pattern.finditer(soup.find(id='eow-title').text.lower()))) > 0:
+                url = self.strip_url(response.url)
+                rick_rolls[url] = RickRollData('soup', 'video-title')
 
             # check video description
-            elif len(list(rickroll_pattern.finditer(soup.find(id='eow-description').text))) > 0:
-                rick_rolls[response.url] = RickRollData('soup', 'video-description')
+            elif len(list(rickroll_pattern.finditer(soup.find(id='eow-description').text.lower()))) > 0:
+                url = self.strip_url(response.url)
+                rick_rolls[url] = RickRollData('soup', 'video-description')
+
+            elif len(list(rickroll_pattern.finditer(soup.find('ul', {'class': 'watch-extras-section'}).text.lower()))) > 0:
+                url = self.strip_url(response.url.human_repr())
+                rick_rolls[url] = RickRollData('soup', 'recommended')
 
             else:
                 urls.append(response.url)
@@ -210,16 +217,17 @@ class Rick(Astley):
             # print(items[0].keys())
             is_rick_roll, percent, count = self.parse_comments(comments)
             if is_rick_roll:
-                rick_rolls[url] = RickRollData('comments', {'percent': percent, 'count': count})
+                rick_rolls[self.strip_url(url)] = RickRollData('comments', {'percent': percent, 'count': count})
         return rick_rolls
     
     async def get_comments(self, url):
         url = url if isinstance(url, str) else url.human_repr()
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.data_size}&key={authentication.YOUTUBE_API_KEY}") as response:
-                json = await response.json()
-                return [str(item['snippet']) for item in (i := json.get('items')) if i]
-                # return json
+        async with self.session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.data_size}&key={authentication.YOUTUBE_API_KEY}") as response:
+            json = await response.json()
+            i = json.get('items')
+            i = i if i else []
+            return [str(item['snippet']) for item in i]
+            # return json
             
     def parse_comments(self, comments):
         count = 0
