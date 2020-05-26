@@ -12,6 +12,7 @@ from bot.astley import Astley
 from utils.patterns import *
 from confidential import authentication
 
+
 logger = logging.getLogger("bot.rick")
 
 RickRollData = namedtuple('RickRollData', ['check', 'extra'])
@@ -34,11 +35,6 @@ class Rick(Astley):
         self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
         self.session = aiohttp.ClientSession()
         self.comments_to_retrieve = 100
-        self.logging_channels = {
-            'errors': 0,
-            'direct_messages': 0,
-            'reports': 0
-        }
 
     async def on_message(self, message):
         if message.author == self.user:
@@ -47,8 +43,8 @@ class Rick(Astley):
             await self.process_private_messages(message)
         else:
             await self.process_commands(message)
-            # if not message.content.lower().startswith(f'{self.command_prefix}check'):
-            #     result = await self.process_rick_rolls(message) todo: add this back
+            if not message.content.lower().startswith(f'{self.command_prefix}check'):
+                result = await self.process_rick_rolls(message)
 
     async def process_private_messages(self, message):
         msg = f"Received private message from {message.author} ({message.author.id}) - {message.clean_content}"

@@ -22,7 +22,6 @@ class Users(commands.Cog):
         embed.set_author(name=str(self.bot.user), icon_url=self.bot.user.avatar_url)
         embed.add_field(name="Version", value=self.bot.version)
         embed.add_field(name="Library", value='discord.py')
-        embed.add_field(name="OS", value={'linux': 'Ubuntu', 'win32': 'Windows'}[sys.platform])
 
         dt = datetime.datetime.now()-self.bot.started_at
         if dt.days >= 7:
@@ -43,9 +42,10 @@ class Users(commands.Cog):
         embed.add_field(name="Users", value=str(len(self.bot.users)))
 
         embed.add_field(name="Source", value='[github](https://github.com/nwunderly/rickroll-warning-system)')
-        embed.add_field(name="Add me!", value='[invite](https://discordapp.com/oauth2/authorize?client_id=687454860907511881&scope=bot)')
+        embed.add_field(name="Add me!", value='[invite](https://discordapp.com/oauth2/authorize?client_id=687454860907511881&scope=bot&permissions=67456001)')
+        embed.add_field(name="Support server", value="[join](https://discord.gg/3nhhWPF)")
 
-        embed.set_footer(text=f'created by {", ".join(str(self.bot.get_user(owner)) for owner in [448250281097035777, 204414611578028034])}')
+        embed.set_footer(text=f'created by {" and ".join(str(self.bot.get_user(owner)) for owner in [448250281097035777, 204414611578028034])}')
         embed.timestamp = self.bot.user.created_at
         await ctx.send(embed=embed)
 

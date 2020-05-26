@@ -105,6 +105,5 @@ class Admin(commands.Cog):
             await ctx.send(f"{e.__class__}: {str(e)}")
 
 
-
 def setup(bot):
     bot.add_cog(Admin(bot))

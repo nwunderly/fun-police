@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 from discord.ext import tasks
 
@@ -6,6 +7,7 @@ import asyncio
 import datetime
 import sdnotify
 import logging
+import traceback
 
 # custom imports
 from utils.db import AsyncRedis
@@ -26,7 +28,10 @@ class Astley(commands.AutoShardedBot):
         self.sd_ready()
         self.started_at = datetime.datetime.now()
         self.redis = AsyncRedis()
-        logger.debug(f"Initialization complete.")
+        self.logging_channels = {
+            'errors': 714667464700461056,
+            'reports': 714667557730123776
+        }
 
     async def try_run(self, coro):
         try:
@@ -95,3 +100,25 @@ class Astley(commands.AutoShardedBot):
         await self.cleanup()
         logger.debug("Closing connection to discord.")
         await super().close()
+
+    async def on_error(self, event_method, *args, **kwargs):
+        exc = traceback.format_exc()
+        logger.error(f"Ignoring exception in {event_method}:\n{exc}")
+        channel = self.get_channel(self.logging_channels['errors'])
+        try:
+            await channel.send(f"Exception occurred in {event_method}: ```py\n{exc}\n```")
+        except discord.DiscordException:
+            logger.error("Failed to log error to logging channel.")
+
+    async def on_command_error(self, context, exception):
+        exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        logger.error(f'Ignoring exception in command {context.command}:\n{exc}')
+        channel = self.get_channel(self.logging_channels['errors'])
+        try:
+            await channel.send(f"Exception occurred in command {context.command}: ```py\n{exc}\n```")
+        except discord.DiscordException:
+            logger.error("Failed to log error to logging channel.")
+
+
+
+
