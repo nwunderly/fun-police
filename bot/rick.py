@@ -1,6 +1,7 @@
 import aiohttp
 import logging
 import yaml
+import traceback
 from bs4 import BeautifulSoup
 from collections import defaultdict, namedtuple
 
@@ -179,7 +180,7 @@ class Rick(Astley):
                     response.close()
             except aiohttp.InvalidURL:
                 pass
-            return responses
+        return responses
 
     def filter_youtube(self, responses):
         """
@@ -274,7 +275,10 @@ class Rick(Astley):
 
     async def setup(self):
         for cog in self.startup_cogs:
-            self.load_extension(cog)
+            try:
+                self.load_extension(cog)
+            except commands.ExtensionFailed as exception:
+                traceback.print_exception(type(exception), exception, exception.__traceback__)
 
     async def cleanup(self):
         await self.session.close()

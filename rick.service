@@ -8,7 +8,7 @@ StartLimitBurst=5
 
 [Service]
 
-ExecStart=/usr/bin/python3 /usr/local/bin/rick/launcher.py
+ExecStart=/usr/bin/python3 /home/rick/launcher.py
 
 Environment=PYTHONUNBUFFERED=1
 
@@ -18,7 +18,7 @@ NotifyAccess=all
 
 TimeoutStopSec=30s
 
-Type=notify
+Type=simple
 
 #User=rick
 

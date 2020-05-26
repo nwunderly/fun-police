@@ -5,7 +5,7 @@ import time
 import traceback
 import logging
 import copy
-import boto3
+# import boto3
 
 import discord
 from discord.ext import commands
@@ -21,7 +21,7 @@ logger = logging.getLogger('cogs.testing')
 class Testing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.table = boto3.resource('dynamodb').Table('Rick')
+        # self.table = boto3.resource('dynamodb').Table('Rick')
         self.stats = {'correct': set(), 'total': set()}
 
     def cog_check(self, ctx):
