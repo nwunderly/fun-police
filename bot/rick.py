@@ -27,7 +27,7 @@ class Rick(Astley):
     """
     def __init__(self):
         super().__init__(command_prefix="!!")
-        self.version = '1.0.1'
+        self.version = '1.0.2'
         self.startup_cogs = ['cogs.testing', 'cogs.admin', 'cogs.users']
         self.url_pattern = url_pattern
         self.yt_pattern = yt_pattern
@@ -44,13 +44,13 @@ class Rick(Astley):
             await self.process_private_messages(message)
         else:
             await self.process_commands(message)
-            if not message.content.lower().startswith(f'{self.command_prefix}check'):
+            if not message.content.lower().startswith(f'{self.command_prefix}check') and not message.content.lower().startswith(f'{self.command_prefix}report'):
                 result = await self.process_rick_rolls(message)
 
     async def process_private_messages(self, message):
         msg = f"Received private message from {message.author} ({message.author.id}) - {message.clean_content}"
         logger.info(msg)
-        await self.get_channel(0).send(msg)
+        # await self.get_channel(0).send(msg)
 
     def get_urls(self, s):
         return [match.group(0) for match in self.url_pattern.finditer(s)]
@@ -83,7 +83,11 @@ class Rick(Astley):
         return resolved
 
     async def process_results(self, message, rick_rolls: dict):
-        await message.channel.send(str(rick_rolls))
+        if len(rick_rolls) > 1:
+            urls = '```'+'\n'.join(list(rick_rolls.keys()))+'```'
+            await message.channel.send(f"**⚠ Detected Rickroll at {len(rick_rolls)} URLs:\n**{urls}")
+        else:
+            await message.channel.send(f"**⚠ Detected Rickroll at URL:\n**```{list(rick_rolls.keys())[0]}```")
 
     async def process_rick_rolls(self, message):
         """
