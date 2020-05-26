@@ -40,9 +40,6 @@ class Rick(Astley):
             'reports': 0
         }
 
-    async def cleanup(self):
-        await self.session.close()
-
     async def on_message(self, message):
         if message.author == self.user:
             return
@@ -93,7 +90,8 @@ class Rick(Astley):
 
     async def process_rick_rolls(self, message):
         """
-        Returns list of dicts, one for each URL detected.
+        Calls find_rick_rolls, then processes results, sends a message if necessary and adds any rick rolls found to redis cache.
+        Returns True or False depending on whether any rick rolls were found.
         :param message: discord Message object to be checked.
         :return: list of dicts, each with "is_rick_roll" and "extra" fields.
         """
@@ -121,6 +119,7 @@ class Rick(Astley):
 
         # URLs in message
         urls = self.get_urls(content)  # this will be a list
+        original_urls = [url for url in urls]
 
         # remove duplicate URLs by stripping "http://" and passing through set()
         urls = set([self.strip_url(url) for url in urls])
@@ -131,6 +130,10 @@ class Rick(Astley):
 
         # handle redirects
         responses = await self.resolve(urls)  # returns list of Response objects
+
+        # check redis again, this time for any new URLs found after redirect
+        redirect_urls = [response.url.human_repr() for response in responses if response.url.human_repr() not in original_urls]
+        rick_rolls, urls = await self.check_redis(rick_rolls, redirect_urls)
 
         # check for YouTube URLs
         # todo: non-youtube URLs should scrape and check for embedded YouTube video
@@ -232,7 +235,7 @@ class Rick(Astley):
                 rick_rolls[url] = RickRollData('soup', 'recommended')
 
             else:
-                urls.append(response.url)
+                urls.append(response.url.human_repr())
         return rick_rolls, urls
                 
     async def check_comments(self, rick_rolls, urls):
@@ -276,6 +279,9 @@ class Rick(Astley):
     async def setup(self):
         for cog in self.startup_cogs:
             self.load_extension(cog)
+
+    async def cleanup(self):
+        await self.session.close()
 
 
 
