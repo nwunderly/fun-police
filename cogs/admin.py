@@ -99,7 +99,7 @@ class Admin(commands.Cog):
                 json = await response.json()
                 print(json)
             videos = json['items']
-            async with ctx.trigger_typing():
+            async with ctx.typing():
                 for video in videos:
                     await self.bot.redis.url_set(f"www.youtube.com/watch?v={video['snippet']['resourceId']['videoId']}", True, 'manual', None)
             await ctx.send(f"Added {len(videos)} to cache.")
