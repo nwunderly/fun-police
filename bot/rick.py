@@ -271,7 +271,8 @@ class Rick(Astley):
             m = len(list(comment_pattern.finditer(i.lower())))
             if m:
                 count += 1
-        percent = (count / len(comments)) * 100
+        try: percent = (count / len(comments)) * 100
+        except ZeroDivisionError: percent = 0
         if percent > 15 or count > 5:
             return True, percent, count
         else:
