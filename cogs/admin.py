@@ -14,6 +14,9 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    def cog_check(self, ctx):
+        return ctx.author.id in [448250281097035777, 204414611578028034]
+
     @commands.command()
     async def load(self, ctx, *, cog):
         """Loads a cog."""
