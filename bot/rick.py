@@ -4,12 +4,15 @@ import yaml
 from bs4 import BeautifulSoup
 from collections import defaultdict, namedtuple
 
+import discord
+from discord.ext import commands
+
 # custom imports
-from bot.backend import Astley
+from bot.astley import Astley
 from utils.patterns import *
 from confidential import authentication
 
-logger = logging.getLogger("bot.frontend")
+logger = logging.getLogger("bot.rick")
 
 RickRollData = namedtuple('RickRollData', ['check', 'extra'])
 # check is name of check (redis, soup, comments, etc)
@@ -22,13 +25,20 @@ class Rick(Astley):
     """
     def __init__(self):
         super().__init__(command_prefix="!!")
+        self.version = '1.0.1'
+        self.startup_cogs = ['cogs.testing', 'cogs.admin', 'cogs.users']
         self.url_pattern = url_pattern
         self.yt_pattern = yt_pattern
         self.rickroll_pattern = rickroll_pattern
         self.comment_pattern = comment_pattern
-        self.session = aiohttp.ClientSession()
         self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
-        self.data_size = 100
+        self.session = aiohttp.ClientSession()
+        self.comments_to_retrieve = 100
+        self.logging_channels = {
+            'errors': 0,
+            'direct_messages': 0,
+            'reports': 0
+        }
 
     async def cleanup(self):
         await self.session.close()
@@ -40,7 +50,8 @@ class Rick(Astley):
             await self.process_private_messages(message)
         else:
             await self.process_commands(message)
-            # result = await self.process_rick_rolls(message) todo: add this back
+            # if not message.content.lower().startswith(f'{self.command_prefix}check'):
+            #     result = await self.process_rick_rolls(message) todo: add this back
 
     async def process_private_messages(self, message):
         msg = f"Received private message from {message.author} ({message.author.id}) - {message.clean_content}"
@@ -56,7 +67,11 @@ class Rick(Astley):
     @staticmethod
     def strip_url(url):
         url = url if isinstance(url, str) else url.human_repr()
-        return url.replace('http://', '').replace('https://', '')
+        if url.startswith('http://'):
+            url = url[7:]
+        elif url.startswith('https://'):
+            url = url[8:]
+        return url
 
     async def _resolve(self, *urls):
         """Deprecated"""
@@ -83,10 +98,29 @@ class Rick(Astley):
         :return: list of dicts, each with "is_rick_roll" and "extra" fields.
         """
         logger.debug(f"Checking message {message.id}.")
+        rick_rolls = await self.find_rick_rolls(message.content)
+
+        if rick_rolls:
+            await self.process_results(message, rick_rolls)
+
+        # write new rick rolls to Redis
+        # todo: cache non-rick-rolls too
+        for url, data in rick_rolls.items():
+            if data.check != 'redis':
+                url = self.strip_url(url)
+                await self.redis.url_set(url, True, data.check, data.extra)
+
+        return bool(rick_rolls)
+
+    async def find_rick_rolls(self, content):
+        """
+        Runs rickroll checks on any string, abstracted from process_rick_rolls for debugging.
+        Returns breakdown of all detected rickroll links.
+        """
         rick_rolls = dict()  # key: url, value: name of first check that caught this url
 
         # URLs in message
-        urls = self.get_urls(message.content)  # this will be a list
+        urls = self.get_urls(content)  # this will be a list
 
         # remove duplicate URLs by stripping "http://" and passing through set()
         urls = set([self.strip_url(url) for url in urls])
@@ -108,29 +142,20 @@ class Rick(Astley):
         # check comments for any YouTube URLs that haven't already been flagged
         rick_rolls = await self.check_comments(rick_rolls, urls)
 
-        if rick_rolls:
-            await self.process_results(message, rick_rolls)
-
-        # write new rick rolls to Redis
-        # todo: cache non-rick-rolls too
-        for url, data in rick_rolls.items():
-            if data.check != 'redis':
-                url = self.strip_url(url)
-                await self.redis.url_set(url, True, data.check, data.extra)
-
-        return bool(rick_rolls)
+        return rick_rolls
 
     async def check_redis(self, rick_rolls, urls):
         for url in list(urls):
             url = self.strip_url(url)
             redis = await self.redis.url_get(url)
-            if redis is True:  # it's a cached rick roll
-                rick_rolls[url] = RickRollData('redis', None)  # makes note that this is a rick roll along with the check that found it
-                urls.remove(url)  # no longer needs to be checked
-            elif redis is False:  # it's a cached non-rick-roll
-                urls.remove(url)  # it's been confirmed false, no longer needs to be checked
-            elif redis is None:  # not cached, will continue on to the next set of checks
+            if not redis or not isinstance(redis, dict):  # not cached, will continue on to the next set of checks
                 continue
+            is_rick_roll = redis.get('is_rick_roll')
+            if is_rick_roll is True:  # it's a cached rick roll
+                rick_rolls[url] = RickRollData('redis', redis['detected_by'])  # makes note that this is a rick roll along with the check that found it
+                urls.remove(url)  # no longer needs to be checked
+            elif is_rick_roll is False:  # it's a cached non-rick-roll
+                urls.remove(url)  # it's been confirmed false, no longer needs to be checked
             else:
                 logger.error(f"Database error, invalid result for URL: {url}")
         return rick_rolls, urls
@@ -227,7 +252,7 @@ class Rick(Astley):
         Pulls video comments using HTTP request to YouTube API.
         """
         url = url if isinstance(url, str) else url.human_repr()
-        async with self.session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.data_size}&key={authentication.YOUTUBE_API_KEY}") as response:
+        async with self.session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.comments_to_retrieve}&key={authentication.YOUTUBE_API_KEY}") as response:
             json = await response.json()
             i = json.get('items')
             i = i if i else []
@@ -249,7 +274,8 @@ class Rick(Astley):
             return False, percent, count
 
     async def setup(self):
-        self.load_extension('cogs.testing')
-        # self.load_extension('cogs.admin')
+        for cog in self.startup_cogs:
+            self.load_extension(cog)
+
 
 

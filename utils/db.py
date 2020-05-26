@@ -73,7 +73,10 @@ class AsyncRedis(aredis.StrictRedis):
         """
         Modified implementation of set() that handles metadata for items.
         """
-        url = url.replace('http://', '').replace('https://', '')
+        if url.startswith('http://'):
+            url = url[7:]
+        elif url.startswith('https://'):
+            url = url[8:]
         data = {
             'is_rick_roll': is_rick_roll,
             'timestamp': str(datetime.datetime.now()),
@@ -87,11 +90,7 @@ class AsyncRedis(aredis.StrictRedis):
         response = await self.get(url)
         if response:
             data = eval(response.decode())
-        else:
-            return None
-        if isinstance(data, dict):
-            is_rick_roll = data.get('is_rick_roll')
-            return is_rick_roll
+            return data
         else:
             return None
 

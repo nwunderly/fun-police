@@ -4,10 +4,11 @@ import logging
 from argparse import ArgumentParser
 
 from discord.ext import commands
+import jishaku
 
 # custom imports
 from utils.helpers import setup_logger
-from bot.frontend import Rick
+from bot.rick import Rick
 
 
 logger = logging.getLogger("launcher")
@@ -15,17 +16,6 @@ setup_logger('launcher')
 setup_logger('bot')
 setup_logger('utils')
 setup_logger('cogs')
-
-
-class Debug(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
-    @commands.command()
-    @commands.is_owner()
-    async def __kill(self, ctx):
-        await ctx.send("Closing bot.")
-        await self.bot.close()
 
 
 def start(debug):
@@ -36,7 +26,7 @@ def start(debug):
     if sys.platform != 'linux' or debug:
         try:
             logger.info("Adding debug cog.")
-            bot.add_cog(Debug(bot))
+            bot.add_cog(jishaku.Jishaku(bot))
         except commands.ExtensionFailed:
             pass
 

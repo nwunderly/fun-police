@@ -11,7 +11,7 @@ import logging
 from utils.db import AsyncRedis
 from confidential import authentication
 
-logger = logging.getLogger('bot.backend')
+logger = logging.getLogger('bot.astley')
 
 
 class Astley(commands.AutoShardedBot):

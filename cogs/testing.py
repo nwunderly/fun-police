@@ -14,6 +14,10 @@ from confidential.authentication import YOUTUBE_API_KEY
 logger = logging.getLogger('cogs.testing')
 
 
+# todo: remove this cog before launch
+#       add cog for approved testers to add links to redis along with correct answer for accuracy testing
+
+
 class Testing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
