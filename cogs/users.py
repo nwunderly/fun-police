@@ -5,6 +5,8 @@ import datetime
 import sys
 import psutil
 
+from confidential import authentication
+
 
 class Users(commands.Cog):
     def __init__(self, bot):
@@ -62,7 +64,7 @@ class Users(commands.Cog):
     @commands.command()
     async def report(self, ctx, url, is_rick_roll: bool):
         """Report a rickroll that the bot failed to detect, or a normal URL that the bot thought was a rickroll."""
-        hook = discord.Webhook.from_url(self.bot.properties.logging_webhooks['reports'], adapter=discord.AsyncWebhookAdapter(self.bot.session))
+        hook = discord.Webhook.from_url(authentication.WEBHOOKS['reports'], adapter=discord.AsyncWebhookAdapter(self.bot.session))
         await hook.send(f"⚠ **New report:**\n"
                         f"User: {ctx.author} (`{ctx.author.id}`)\n"
                         f"URL: `{url}`\n"

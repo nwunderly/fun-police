@@ -127,7 +127,7 @@ class Astley(commands.AutoShardedBot):
     async def on_error(self, event_method, *args, **kwargs):
         exc = traceback.format_exc()
         logger.error(f"Ignoring exception in {event_method}:\n{exc}")
-        hook = discord.Webhook.from_url(self.properties.logging_webhooks['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+        hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
         try:
             await hook.send(f"Exception occurred in {event_method}: ```py\n{exc}\n```")
         except discord.DiscordException:
@@ -137,7 +137,9 @@ class Astley(commands.AutoShardedBot):
         exc = traceback.format_exception(exception.__class__, exception, exception.__traceback__)
         exc = ''.join(exc) if isinstance(exc, list) else exc
         logger.error(f'Ignoring exception in command {context.command}:\n{exc}')
-        hook = discord.Webhook.from_url(self.properties.logging_webhooks['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+        if not context.command or isinstance(exception, commands.UserInputError):
+            return
+        hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
         try:
             await hook.send(f"Exception occurred in command {context.command}: ```py\n{exc}\n```")
         except discord.DiscordException:
