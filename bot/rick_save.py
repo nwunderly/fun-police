@@ -93,17 +93,10 @@ class Rick(Astley):
         :return: list of dicts, each with "is_rick_roll" and "extra" fields.
         """
         logger.debug(f"Checking message {message.id}.")
-        urls = self.get_urls(message.content)
-        
-        if not urls:
-            return
+        rick_rolls = await self.find_rick_rolls(message.content)
 
-        rick_rolls = await self.find_rick_rolls(message.content, urls)
-
-        if not rick_rolls:
-            return
-
-        await self.process_results(message, rick_rolls)
+        if rick_rolls:
+            await self.process_results(message, rick_rolls)
 
         # write new rick rolls to Redis
         # todo: cache non-rick-rolls too
@@ -114,7 +107,7 @@ class Rick(Astley):
 
         return bool(rick_rolls)
 
-    async def find_rick_rolls(self, content, urls):
+    async def find_rick_rolls(self, content):
         """
         Runs rickroll checks on any string, abstracted from process_rick_rolls for debugging.
         Returns breakdown of all detected rickroll links.
@@ -122,6 +115,7 @@ class Rick(Astley):
         rick_rolls = dict()  # key: url, value: name of first check that caught this url
 
         # URLs in message
+        urls = self.get_urls(content)  # this will be a list
         original_urls = [url for url in urls]
 
         # remove duplicate URLs by stripping "http://" and passing through set()
