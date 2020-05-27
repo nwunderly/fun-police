@@ -13,14 +13,24 @@ class Users(commands.Cog):
     @commands.command()
     async def invite(self, ctx):
         """Add me to your server!"""
-        await ctx.send(f"**You can invite me here: <{discord.utils.oauth_url(self.bot.user.id)}>**")
+        await ctx.send(f"**You can invite me here: <{self.bot.properties.bot_url}>**")
+
+    @commands.command()
+    async def support(self, ctx):
+        """Join the support server!"""
+        await ctx.send(f"**Support server invite: <{self.bot.properties.server_url}>**")
+
+    @commands.command()
+    async def source(self, ctx):
+        """My public github repository!"""
+        await ctx.send(f"**My source code: <{self.bot.properties.github_url}>**")
 
     @commands.command()
     async def about(self, ctx):
         """Some info about me!"""
         embed = discord.Embed(color=ctx.author.color)
         embed.set_author(name=str(self.bot.user), icon_url=self.bot.user.avatar_url)
-        embed.add_field(name="Version", value=self.bot.version)
+        embed.add_field(name="Version", value=self.bot.properties.version)
         embed.add_field(name="Library", value='discord.py')
 
         dt = datetime.datetime.now()-self.bot.started_at
@@ -41,22 +51,22 @@ class Users(commands.Cog):
         embed.add_field(name="Servers", value=str(len(self.bot.guilds)))
         embed.add_field(name="Users", value=str(len(self.bot.users)))
 
-        embed.add_field(name="Source", value='[github](https://github.com/nwunderly/rickroll-warning-system)')
-        embed.add_field(name="Add me!", value='[invite](https://discordapp.com/oauth2/authorize?client_id=687454860907511881&scope=bot&permissions=67456001)')
-        embed.add_field(name="Support server", value="[join](https://discord.gg/3nhhWPF)")
+        embed.add_field(name="Source", value=f'[github]({self.bot.properties.github_url})')
+        embed.add_field(name="Add me!", value=f'[invite]({self.bot.properties.bot_url})')
+        embed.add_field(name="Support server", value=f'[join]({self.bot.properties.server_url})')
 
-        embed.set_footer(text=f'created by {" and ".join(str(self.bot.get_user(owner)) for owner in [448250281097035777, 204414611578028034])}')
+        embed.set_footer(text=f'created by {" and ".join(str(self.bot.get_user(owner)) for owner in self.bot.properties.owner_ids)}')
         embed.timestamp = self.bot.user.created_at
         await ctx.send(embed=embed)
 
     @commands.command()
     async def report(self, ctx, url, is_rick_roll: bool):
         """Report a rickroll that the bot failed to detect, or a normal URL that the bot thought was a rickroll."""
-        channel = self.bot.get_channel(self.bot.logging_channels['reports'])
-        await channel.send(f"⚠ **New report:**\n"
-                           f"User: {ctx.author} (`{ctx.author.id}`)\n"
-                           f"URL: `{url}`\n"
-                           f"is_rick_roll: {is_rick_roll}")
+        hook = discord.Webhook.from_url(self.bot.properties.logging_webhooks['reports'], adapter=discord.AsyncWebhookAdapter(self.bot.session))
+        await hook.send(f"⚠ **New report:**\n"
+                        f"User: {ctx.author} (`{ctx.author.id}`)\n"
+                        f"URL: `{url}`\n"
+                        f"is_rick_roll: {is_rick_roll}")
         await ctx.send("Sent!")
 
     @commands.command()

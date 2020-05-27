@@ -26,16 +26,12 @@ class Rick(Astley):
     A bot that detects and warns you about possible Rick rolls.
     """
     def __init__(self):
-        super().__init__(command_prefix="!!")
-        self.version = '1.0.2'
-        self.startup_cogs = ['cogs.testing', 'cogs.admin', 'cogs.users']
+        super().__init__()
         self.url_pattern = url_pattern
         self.yt_pattern = yt_pattern
         self.rickroll_pattern = rickroll_pattern
         self.comment_pattern = comment_pattern
         self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
-        self.session = aiohttp.ClientSession()
-        self.comments_to_retrieve = 100
 
     async def on_message(self, message):
         if message.author == self.user:
@@ -256,7 +252,7 @@ class Rick(Astley):
         Pulls video comments using HTTP request to YouTube API.
         """
         url = url if isinstance(url, str) else url.human_repr()
-        async with self.session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.comments_to_retrieve}&key={authentication.YOUTUBE_API_KEY}") as response:
+        async with self.session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.properties.comment_count}&key={authentication.YOUTUBE_API_KEY}") as response:
             json = await response.json()
             i = json.get('items')
             i = i if i else []
@@ -272,14 +268,15 @@ class Rick(Astley):
             if m:
                 count += 1
         try: percent = (count / len(comments)) * 100
-        except ZeroDivisionError: percent = 0
+        except ZeroDivisionError:
+            percent = 0
         if percent > 15 or count > 5:
             return True, percent, count
         else:
             return False, percent, count
 
     async def setup(self):
-        for cog in self.startup_cogs:
+        for cog in self.properties.cogs:
             try:
                 self.load_extension(cog)
             except commands.ExtensionFailed as exception:

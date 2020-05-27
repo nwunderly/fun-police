@@ -16,13 +16,13 @@ Restart=on-failure
 
 NotifyAccess=all
 
-#TimeoutStopSec=30s
+TimeoutStopSec=30s
 
-Type=simple
+Type=notify
 
 #User=rick
 
-#WatchdogSec=30s
+WatchdogSec=30s
 
 
 [Install]

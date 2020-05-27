@@ -8,9 +8,13 @@ import datetime
 import sdnotify
 import logging
 import traceback
+import aiohttp
+import random
+import sys
 
 # custom imports
 from utils.db import AsyncRedis
+from utils import properties
 from confidential import authentication
 
 logger = logging.getLogger('bot.astley')
@@ -21,17 +25,15 @@ class Astley(commands.AutoShardedBot):
     Base class that hides stupid event loop and systemd stuff.
     """
     def __init__(self, *args, **kwargs):
+        kwargs['command_prefix'] = properties.prefix
         super().__init__(*args, **kwargs)
         self.loggers = dict()
         self._exit_code = 0
         self._sd_notifier = sdnotify.SystemdNotifier()
-        self.sd_ready()
         self.started_at = datetime.datetime.now()
         self.redis = AsyncRedis()
-        self.logging_channels = {
-            'errors': 714667464700461056,
-            'reports': 714667557730123776
-        }
+        self.properties = properties
+        self.session = aiohttp.ClientSession()
 
     async def try_run(self, coro):
         try:
@@ -45,6 +47,12 @@ class Astley(commands.AutoShardedBot):
         Override this to override discord.Client on_ready.
         """
         logger.info('Logged in as {0.user}.'.format(self))
+        if sys.platform == 'linux':
+            logger.debug('Starting watchdog loop.')
+            self.sd_ready()
+            self.sd_watchdog.start()
+        self.update_presence.start()
+        logger.info('Bot is ready.')
 
     async def on_command_completion(self, ctx):
         logger.info(f"Command '{ctx.command.qualified_name}' invoked by user {ctx.author.id} in channel {ctx.channel.id}, guild {ctx.guild.id}.")
@@ -60,6 +68,21 @@ class Astley(commands.AutoShardedBot):
     @tasks.loop(seconds=1)
     async def sd_watchdog(self):
         self.sd_notify("WATCHDOG=1")
+
+    @tasks.loop(minutes=20)
+    async def update_presence(self):
+        activity = None
+        name = random.choice(self.properties.activities)
+        if name.lower().startswith("playing "):
+            activity = discord.Game(name.replace("playing ", ""))
+        elif name.lower().startswith("watching "):
+            activity = discord.Activity(type=discord.ActivityType.watching,
+                                        name=name.replace("watching", ""))
+        elif name.lower().startswith("listening to "):
+            activity = discord.Activity(type=discord.ActivityType.listening,
+                                        name=name.replace("listening to ", ""))
+        if activity:
+            await self.change_presence(activity=activity)
 
     async def setup(self):
         """
@@ -104,18 +127,19 @@ class Astley(commands.AutoShardedBot):
     async def on_error(self, event_method, *args, **kwargs):
         exc = traceback.format_exc()
         logger.error(f"Ignoring exception in {event_method}:\n{exc}")
-        channel = self.get_channel(self.logging_channels['errors'])
+        hook = discord.Webhook.from_url(self.properties.logging_webhooks['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
         try:
-            await channel.send(f"Exception occurred in {event_method}: ```py\n{exc}\n```")
+            await hook.send(f"Exception occurred in {event_method}: ```py\n{exc}\n```")
         except discord.DiscordException:
             logger.error("Failed to log error to logging channel.")
 
     async def on_command_error(self, context, exception):
-        exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        exc = traceback.format_exception(exception.__class__, exception, exception.__traceback__)
+        exc = ''.join(exc) if isinstance(exc, list) else exc
         logger.error(f'Ignoring exception in command {context.command}:\n{exc}')
-        channel = self.get_channel(self.logging_channels['errors'])
+        hook = discord.Webhook.from_url(self.properties.logging_webhooks['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
         try:
-            await channel.send(f"Exception occurred in command {context.command}: ```py\n{exc}\n```")
+            await hook.send(f"Exception occurred in command {context.command}: ```py\n{exc}\n```")
         except discord.DiscordException:
             logger.error("Failed to log error to logging channel.")
 

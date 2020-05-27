@@ -14,7 +14,7 @@ def setup_logger(name):
 
     if sys.platform == 'linux':
         filename = '/home/rick/logs/{}.log'
-        level = logging.DEBUG  # INFO
+        level = logging.INFO
     else:
         filename = './logs/{}.log'
         level = logging.DEBUG
