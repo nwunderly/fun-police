@@ -57,10 +57,7 @@ class Rick(Astley):
     @staticmethod
     def strip_url(url):
         url = url if isinstance(url, str) else url.human_repr()
-        if url.startswith('http://'):
-            url = url[7:]
-        elif url.startswith('https://'):
-            url = url[8:]
+        url = re.sub('https?://', '', url)
         return url
 
     async def _resolve(self, *urls):
