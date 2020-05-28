@@ -57,7 +57,10 @@ class Rick(Astley):
     @staticmethod
     def strip_url(url):
         url = url if isinstance(url, str) else url.human_repr()
-        url = re.sub('https?://', '', url)
+        www = re.sub('https?://www\.', '', url)
+        url = www if www else "www." + re.sub('https?://', '', url)
+        url = re.sub('&feature=youtu.be', '', url)
+        url = re.sub('&t=\d+', '', url)
         return url
 
     async def _resolve(self, *urls):
@@ -255,7 +258,8 @@ class Rick(Astley):
         Pulls video comments using HTTP request to YouTube API.
         """
         url = url if isinstance(url, str) else url.human_repr()
-        async with self.session.get(f"{self.base_url}part=snippet&videoId={url[-11:]}&textFormat=plainText&maxResults={self.properties.comment_count}&key={authentication.YOUTUBE_API_KEY}") as response:
+        url_id = re.sub('youtube.com/watch?v=', '', url)
+        async with self.session.get(f"{self.base_url}part=snippet&videoId={url_id}&textFormat=plainText&maxResults={self.properties.comment_count}&key={authentication.YOUTUBE_API_KEY}") as response:
             json = await response.json()
             i = json.get('items')
             i = i if i else []
