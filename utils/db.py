@@ -7,6 +7,8 @@ import aredis
 import datetime
 import logging
 
+from utils.helpers import strip_url
+
 logger = logging.getLogger('utils.db')
 
 
@@ -73,10 +75,7 @@ class AsyncRedis(aredis.StrictRedis):
         """
         Modified implementation of set() that handles metadata for items.
         """
-        if url.startswith('http://'):
-            url = url[7:]
-        elif url.startswith('https://'):
-            url = url[8:]
+        url = strip_url(url)
         data = {
             'is_rick_roll': is_rick_roll,
             'timestamp': str(datetime.datetime.now()),
@@ -86,7 +85,7 @@ class AsyncRedis(aredis.StrictRedis):
         await self.set(url, data, *args, **kwargs)
 
     async def url_get(self, url):
-        url = url.replace('http://', '').replace('https://', '')
+        url = strip_url(url)
         response = await self.get(url)
         if response:
             data = eval(response.decode())

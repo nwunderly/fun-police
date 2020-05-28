@@ -75,7 +75,7 @@ class Users(commands.Cog):
     async def check(self, ctx, *urls):
         """Scans a URL and returns a detailed report of the results."""
         await ctx.send("Checking URL...")
-        result = await self.bot.find_rick_rolls('\n'.join(urls))
+        result = await self.bot.find_rick_rolls(urls)
         await ctx.send(result)
 
 

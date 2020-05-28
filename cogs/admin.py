@@ -95,13 +95,23 @@ class Admin(commands.Cog):
             playlist_id = self.bot.yt_pattern.fullmatch(url).group(6)[6:]
             request_url = f"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={playlist_id}&key={YOUTUBE_API_KEY}"
             await ctx.send(playlist_id)
-            async with self.bot.session.get(request_url) as response:
-                json = await response.json()
-                print(json)
-            videos = json['items']
+            next_page_token = True
+            videos = []
             async with ctx.typing():
+                while next_page_token and next_page_token != '':
+                    if next_page_token is not True:
+                        request_url += f'&pageToken={next_page_token}'
+                    async with self.bot.session.get(request_url) as response:
+                        json = await response.json()
+                        print(json)
+                    items = json.get('items')
+                    if items:
+                        videos += items
+                    else:
+                        break
+                    next_page_token = json.get('nextPageToken')
                 for video in videos:
-                    await self.bot.redis.url_set(f"www.youtube.com/watch?v={video['snippet']['resourceId']['videoId']}", True, 'manual', None)
+                    await self.bot.redis.url_set(f"youtube.com/watch?v={video['snippet']['resourceId']['videoId']}", True, 'manual', None)
             await ctx.send(f"Added {len(videos)} to cache.")
         except Exception as e:
             logger.error(traceback.format_exception(e.__class__, e, e.__traceback__))

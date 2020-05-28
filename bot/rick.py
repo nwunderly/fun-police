@@ -11,6 +11,7 @@ from discord.ext import commands
 # custom imports
 from bot.astley import Astley
 from utils.patterns import *
+from utils.helpers import strip_url
 from confidential import authentication
 
 
@@ -54,15 +55,6 @@ class Rick(Astley):
     def is_youtube(self, url):
         return self.yt_pattern.fullmatch(url)
 
-    @staticmethod
-    def strip_url(url):
-        url = url if isinstance(url, str) else url.human_repr()
-        www = re.sub('https?://www\.', '', url)
-        url = www if www else "www." + re.sub('https?://', '', url)
-        url = re.sub('&feature=youtu.be', '', url)
-        url = re.sub('&t=\d+', '', url)
-        return url
-
     async def _resolve(self, *urls):
         """Deprecated"""
         resolved = set()
@@ -98,7 +90,7 @@ class Rick(Astley):
         if not urls:
             return
 
-        rick_rolls = await self.find_rick_rolls(message.content, urls)
+        rick_rolls = await self.find_rick_rolls(urls)
 
         if not rick_rolls:
             return
@@ -109,12 +101,11 @@ class Rick(Astley):
         # todo: cache non-rick-rolls too
         for url, data in rick_rolls.items():
             if data.check != 'redis':
-                url = self.strip_url(url)
                 await self.redis.url_set(url, True, data.check, data.extra)
 
         return bool(rick_rolls)
 
-    async def find_rick_rolls(self, content, urls):
+    async def find_rick_rolls(self, urls):
         """
         Runs rickroll checks on any string, abstracted from process_rick_rolls for debugging.
         Returns breakdown of all detected rickroll links.
@@ -125,7 +116,7 @@ class Rick(Astley):
         original_urls = [url for url in urls]
 
         # remove duplicate URLs by stripping "http://" and passing through set()
-        urls = set([self.strip_url(url) for url in urls])
+        urls = set([strip_url(url) for url in urls])
 
         # check redis cache
         # redis will have them cached without the http:// part
@@ -152,7 +143,7 @@ class Rick(Astley):
 
     async def check_redis(self, rick_rolls, urls):
         for url in list(urls):
-            url = self.strip_url(url)
+            url = strip_url(url)
             redis = await self.redis.url_get(url)
             if not redis or not isinstance(redis, dict):  # not cached, will continue on to the next set of checks
                 continue
@@ -219,22 +210,22 @@ class Rick(Astley):
 
             # check page title
             if len(list(rickroll_pattern.finditer(soup.head.title.text.lower()))) > 0:
-                url = self.strip_url(response.url)
+                url = strip_url(response.url)
                 rick_rolls[url] = RickRollData('soup', 'page-title')
 
             # check video title
             elif len(list(rickroll_pattern.finditer(soup.find(id='eow-title').text.lower()))) > 0:
-                url = self.strip_url(response.url)
+                url = strip_url(response.url)
                 rick_rolls[url] = RickRollData('soup', 'video-title')
 
             # check video description
             elif len(list(rickroll_pattern.finditer(soup.find(id='eow-description').text.lower()))) > 0:
-                url = self.strip_url(response.url)
+                url = strip_url(response.url)
                 rick_rolls[url] = RickRollData('soup', 'video-description')
 
             # check SME recommended video (youtube automatically adds this when it detects a song)
             elif len(list(rickroll_pattern.finditer(soup.find('ul', {'class': 'watch-extras-section'}).text.lower()))) > 0:
-                url = self.strip_url(response.url.human_repr())
+                url = strip_url(response.url.human_repr())
                 rick_rolls[url] = RickRollData('soup', 'recommended')
 
             else:
@@ -250,7 +241,7 @@ class Rick(Astley):
             comments = await self.get_comments(url)
             is_rick_roll, percent, count = self.parse_comments(comments)
             if is_rick_roll:
-                rick_rolls[self.strip_url(url)] = RickRollData('comments', {'percent': percent, 'count': count})
+                rick_rolls[strip_url(url)] = RickRollData('comments', {'percent': percent, 'count': count})
         return rick_rolls
     
     async def get_comments(self, url):

@@ -3,6 +3,7 @@ import logging
 import datetime
 import sys
 import asyncio
+import re
 
 logger = logging.getLogger('utils.helpers')
 
@@ -42,5 +43,12 @@ async def maybe_coroutine(func, *args, **kwargs):
         return func(*args, **kwargs)
 
 
+def strip_url(url):
+    url = url if isinstance(url, str) else url.human_repr()
+    www = re.sub('https?://www\.', '', url)
+    url = www if www else "www." + re.sub('https?://', '', url)
+    url = re.sub('&feature=youtu.be', '', url)
+    url = re.sub('&t=\d+', '', url)
+    return url
 
 
