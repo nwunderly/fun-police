@@ -143,6 +143,7 @@ class Rick(Astley):
 
     async def check_redis(self, rick_rolls, urls):
         for url in list(urls):
+            urls = [strip_url(u) for u in urls]
             url = strip_url(url)
             redis = await self.redis.url_get(url)
             if not redis or not isinstance(redis, dict):  # not cached, will continue on to the next set of checks
