@@ -45,10 +45,7 @@ async def maybe_coroutine(func, *args, **kwargs):
 
 def strip_url(url):
     url = url if isinstance(url, str) else url.human_repr()
-    www = re.sub('https?://www\.', '', url)
-    url = www if www else "www." + re.sub('https?://', '', url)
+    url = re.sub(r'(?:https?://)?(?:www\.)?', '', url)
     url = re.sub('&feature=youtu.be', '', url)
     url = re.sub('&t=\d+', '', url)
     return url
-
-
