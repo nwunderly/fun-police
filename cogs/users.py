@@ -48,7 +48,7 @@ class Users(commands.Cog):
             uptime = f"{dt.seconds} seconds"
 
         embed.add_field(name="Uptime", value=uptime)
-        memory = int(psutil.Process().memory_info().rss)#//10**6)
+        memory = int(psutil.Process().memory_info().rss//10**6)
         embed.add_field(name="Memory", value=f"{memory} MB")
         embed.add_field(name="Servers", value=str(len(self.bot.guilds)))
         embed.add_field(name="Users", value=str(len(self.bot.users)))
