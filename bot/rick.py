@@ -35,7 +35,7 @@ class Rick(Astley):
         self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
 
     async def on_message(self, message):
-        if message.author == self.user:
+        if message.author == self.user or message.author.id in [687454860907511881, 715258929155932273]:
             return
         if not message.guild:
             await self.process_private_messages(message)
@@ -210,27 +210,32 @@ class Rick(Astley):
             soup = BeautifulSoup(html, features="html.parser")
 
             # check page title
-            if len(list(rickroll_pattern.finditer(soup.head.title.text.lower()))) > 0:
-                url = strip_url(response.url)
-                rick_rolls[url] = RickRollData('soup', 'page-title')
+            try:
+                if len(list(rickroll_pattern.finditer(soup.head.title.text.lower()))) > 0:
+                    url = strip_url(response.url)
+                    rick_rolls[url] = RickRollData('soup', 'page-title')
 
-            # check video title
-            elif len(list(rickroll_pattern.finditer(soup.find(id='eow-title').text.lower()))) > 0:
-                url = strip_url(response.url)
-                rick_rolls[url] = RickRollData('soup', 'video-title')
+                # check video title
+                elif len(list(rickroll_pattern.finditer(soup.find(id='eow-title').text.lower()))) > 0:
+                    url = strip_url(response.url)
+                    rick_rolls[url] = RickRollData('soup', 'video-title')
 
-            # check video description
-            elif len(list(rickroll_pattern.finditer(soup.find(id='eow-description').text.lower()))) > 0:
-                url = strip_url(response.url)
-                rick_rolls[url] = RickRollData('soup', 'video-description')
+                # check video description
+                elif len(list(rickroll_pattern.finditer(soup.find(id='eow-description').text.lower()))) > 0:
+                    url = strip_url(response.url)
+                    rick_rolls[url] = RickRollData('soup', 'video-description')
 
-            # check SME recommended video (youtube automatically adds this when it detects a song)
-            elif len(list(rickroll_pattern.finditer(soup.find('ul', {'class': 'watch-extras-section'}).text.lower()))) > 0:
-                url = strip_url(response.url.human_repr())
-                rick_rolls[url] = RickRollData('soup', 'recommended')
+                # check SME recommended video (youtube automatically adds this when it detects a song)
+                elif len(list(rickroll_pattern.finditer(soup.find('ul', {'class': 'watch-extras-section'}).text.lower()))) > 0:
+                    url = strip_url(response.url.human_repr())
+                    rick_rolls[url] = RickRollData('soup', 'recommended')
 
-            else:
-                urls.append(response.url.human_repr())
+                else:
+                    urls.append(response.url.human_repr())
+
+            except AttributeError:
+                pass
+
         return rick_rolls, urls
                 
     async def check_comments(self, rick_rolls, urls):

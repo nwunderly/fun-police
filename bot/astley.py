@@ -99,9 +99,11 @@ class Astley(commands.AutoShardedBot):
         """
         pass
 
-    def run(self, token=None, *args, **kwargs):
+    def run(self, bot, token=None, *args, **kwargs):
         logger.debug("Run method called.")
-        token = token if token else authentication.DISCORD_TOKEN
+        token = token if token else (
+            authentication.DISCORD_TOKEN if bot == 'main'
+            else authentication.DISCORD_DEV_BOT_TOKEN)
         super().run(token, *args, **kwargs)
 
     async def start(self, *args, **kwargs):
