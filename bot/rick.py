@@ -37,20 +37,35 @@ class Rick(Astley):
     async def on_message(self, message):
         if message.author == self.user or message.author.id in [687454860907511881, 715258929155932273]:
             return
-        if not message.guild:
-            await self.process_private_messages(message)
-        else:
-            await self.process_commands(message)
-            if not message.content.lower().startswith(f'{self.command_prefix}check') and not message.content.lower().startswith(f'{self.command_prefix}report'):
-                result = await self.process_rick_rolls(message)
+        await self.process_commands(message)
+        if not message.content.lower().startswith(f'{self.command_prefix}check') and not message.content.lower().startswith(f'{self.command_prefix}report'):
+            try:
+                await self.process_rick_rolls(message)
+            except Exception as e:
+                exc = traceback.format_exception(e.__class__, e, e.__traceback__)
+                exc = '\n'.join(exc)
+                logger.error(f"Exception occurred in on_message {message.jump_url}>\n{exc}")
+                hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+                try:
+                    await hook.send(f"Exception occurred in [on_message](<{message.jump_url}>):```py\n{exc[1850:]}\n```")
+                except discord.DiscordException:
+                    logger.error("Failed to log error to logging channel.")
+
+    async def on_message_edit(self, before, after):
+        if before.content == after.content:
+            return
+        message = after
+        try:
             await self.process_rick_rolls(message)
+        except Exception as e:
+            exc = traceback.format_exception(e.__class__, e, e.__traceback__)
+            exc = '\n'.join(exc)
+            logger.error(f"Exception occurred in on_message_edit {message.jump_url}>\n{exc}")
+            hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+            try:
+                await hook.send(f"Exception occurred in [on_message_edit](<{message.jump_url}>):```py\n{exc[1850:]}\n```")
             except discord.DiscordException:
                 logger.error("Failed to log error to logging channel.")
-
-    async def process_private_messages(self, message):
-        msg = f"Received private message from {message.author} ({message.author.id}) - {message.clean_content}"
-        logger.info(msg)
-        # await self.get_channel(0).send(msg)
 
     def get_urls(self, s):
         return [match.group(0) for match in self.url_pattern.finditer(s)]
