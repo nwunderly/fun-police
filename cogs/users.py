@@ -31,6 +31,7 @@ class Users(commands.Cog):
     async def about(self, ctx):
         """Some info about me!"""
         embed = discord.Embed(color=ctx.author.color)
+        embed.description = "Check out our [website](https://www.youtube.com/watch?v=dQw4w9WgXcQ)!"
         embed.set_author(name=str(self.bot.user), icon_url=self.bot.user.avatar_url)
         embed.add_field(name="Version", value=self.bot.properties.version)
         embed.add_field(name="Library", value='discord.py')
