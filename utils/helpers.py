@@ -4,6 +4,7 @@ import datetime
 import sys
 import asyncio
 import re
+import yarl
 
 from urllib.parse import urlparse, parse_qs
 
@@ -46,6 +47,10 @@ async def maybe_coroutine(func, *args, **kwargs):
 
 
 def strip_url(url):
+    if not url:
+        return None
+    if isinstance(url, yarl.URL):
+        url = url.human_repr()
     url = url if (url.startswith('https://') or url.startswith('http://')) else 'http://' + url
     parsed = urlparse(url)
 
@@ -57,14 +62,18 @@ def strip_url(url):
             netloc = parsed.netloc
         print(netloc)
         print(parsed.path)
-        print(f"{netloc}/{parsed.path}?{parsed.query}")
-        return f"{netloc}/{parsed.path}?{parsed.query}"
+        _url = f"{netloc}"
+        _url += f"/{parsed.path}" if parsed.path else ''
+        _url += f"?{parsed.query}" if parsed.query else ''
+        return url
 
     # reassembles youtube address without unnecessary queries
     if parsed.netloc == 'www.youtube.com' or parsed.netloc == 'youtube.com':
-        v = parse_qs(parsed.query).get('v')[0]
+        v = parse_qs(parsed.query)
         if v:
-            return f"youtube.com/watch?v={v}"
+            v = v.get('v')[0]
+            if v:
+                return f"youtube.com/watch?v={v}"
 
     # youtu.be -> youtube so it doesn't have to be resolved
     elif parsed.netloc == 'youtu.be':

@@ -43,6 +43,9 @@ class Rick(Astley):
             await self.process_commands(message)
             if not message.content.lower().startswith(f'{self.command_prefix}check') and not message.content.lower().startswith(f'{self.command_prefix}report'):
                 result = await self.process_rick_rolls(message)
+            await self.process_rick_rolls(message)
+            except discord.DiscordException:
+                logger.error("Failed to log error to logging channel.")
 
     async def process_private_messages(self, message):
         msg = f"Received private message from {message.author} ({message.author.id}) - {message.clean_content}"
@@ -115,8 +118,8 @@ class Rick(Astley):
         # URLs in message
         original_urls = [url for url in urls]
 
-        # remove duplicate URLs by stripping "http://" and passing through set()
-        urls = set([strip_url(url) for url in urls])
+        # remove duplicate URLs by stripping "http://www." and passing through set()
+        urls = set([strip_url(url) for url in urls if url])
 
         # check redis cache
         # redis will have them cached without the http:// part
@@ -143,8 +146,9 @@ class Rick(Astley):
 
     async def check_redis(self, rick_rolls, urls):
         for url in list(urls):
-            urls = [strip_url(u) for u in urls]
-            url = strip_url(url)
+            if not url:
+                urls.remove(url)
+                continue
             redis = await self.redis.url_get(url)
             if not redis or not isinstance(redis, dict):  # not cached, will continue on to the next set of checks
                 continue
@@ -165,6 +169,9 @@ class Rick(Astley):
         resolved = set()
         responses = list()  # list of response objects to be passed on to next part
         for url in list(urls):
+            if not url:
+                urls.remove(url)
+                continue
             try:
                 if not url.startswith('http'):
                     url = 'http://' + url
