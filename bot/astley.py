@@ -131,7 +131,7 @@ class Astley(commands.AutoShardedBot):
         logger.error(f"Ignoring exception in {event_method}:\n{exc}")
         hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
         try:
-            await hook.send(f"Exception occurred in {event_method}: ```py\n{exc[1850:]}\n```")
+            await hook.send(f"Exception occurred in {event_method}: ```py\n{exc[:1850]}\n```")
         except discord.DiscordException:
             logger.error("Failed to log error to logging channel.")
 
@@ -143,7 +143,7 @@ class Astley(commands.AutoShardedBot):
             return
         hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
         try:
-            await hook.send(f"Exception occurred in command {context.command}: ```py\n{exc[1850:]}\n```")
+            await hook.send(f"Exception occurred in command {context.command}: ```py\n{exc[:1850]}\n```")
         except discord.DiscordException:
             logger.error("Failed to log error to logging channel.")
 
