@@ -144,7 +144,7 @@ class Rick(Astley):
         responses = await self.resolve(urls)  # returns list of Response objects
 
         # check redis again, this time for any new URLs found after redirect
-        redirect_urls = [response.url.human_repr() for response in responses if response.url.human_repr() not in original_urls]
+        redirect_urls = [strip_url(response.url.human_repr()) for response in responses if response.url.human_repr() not in original_urls]
         rick_rolls, urls = await self.check_redis(rick_rolls, redirect_urls)
 
         # check for YouTube URLs
