@@ -231,8 +231,8 @@ class Rick(Astley):
 
             soup = BeautifulSoup(html, features="html.parser")
 
-            # check page title
             try:
+                # check page title
                 if len(list(rickroll_pattern.finditer(soup.head.title.text.lower()))) > 0:
                     url = strip_url(response.url)
                     rick_rolls[url] = RickRollData('soup', 'page-title')
@@ -255,8 +255,15 @@ class Rick(Astley):
                 else:
                     urls.append(response.url.human_repr())
 
-            except AttributeError:
-                pass
+            except AttributeError as e:
+                exc = traceback.format_exception(e.__class__, e, e.__traceback__)
+                exc = '\n'.join(exc)
+                logger.error(f"SOUP ERROR DETECTED\nWITH URL {response.url}\nHTTP CODE {response.status}\nHTML\n{html}\nTRACEBACK\n{exc}")
+                hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+                try:
+                    await hook.send(f"SOUP ERROR DETECTED\nWITH URL <{response.url}>\nHTTP CODE {response.status}")
+                except discord.DiscordException:
+                    logger.error("Failed to log error to logging channel.")
 
         return rick_rolls, urls
                 
