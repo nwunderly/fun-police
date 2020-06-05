@@ -73,21 +73,6 @@ class Rick(Astley):
     def is_youtube(self, url):
         return self.yt_pattern.fullmatch(url)
 
-    async def _resolve(self, *urls):
-        """Deprecated"""
-        resolved = set()
-        async with aiohttp.ClientSession() as session:
-            for url in urls:
-                try:
-                    if not url.startswith('http'):
-                        url = 'http://' + url
-                    async with session.head(url, allow_redirects=True) as response:
-                        resolved_url = response.url.human_repr()
-                        resolved.add(resolved_url)
-                except aiohttp.InvalidURL:
-                    pass
-        return resolved
-
     async def process_results(self, message, rick_rolls: dict):
         if len(rick_rolls) > 1:
             urls = '```'+'\n'.join(list(rick_rolls.keys()))+'```'
@@ -198,7 +183,7 @@ class Rick(Astley):
                 else:  # it resolves to a duplicate URL
                     # await response.release()
                     response.close()
-            except aiohttp.InvalidURL:
+            except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError):
                 pass
         return responses
 

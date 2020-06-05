@@ -1,7 +1,7 @@
 
 prefix = '!!'
 
-version = '1.2.4'
+version = '1.2.5'
 
 cogs = ['cogs.testing', 'cogs.admin', 'cogs.users']
 
