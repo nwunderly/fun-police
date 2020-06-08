@@ -38,7 +38,9 @@ class Rick(Astley):
         if message.author == self.user or message.author.id in [687454860907511881, 715258929155932273]:
             return
         await self.process_commands(message)
-        if not message.content.lower().startswith(f'{self.command_prefix}check') and not message.content.lower().startswith(f'{self.command_prefix}report'):
+        if not message.content.lower().startswith(f'{self.command_prefix}check') \
+                and not message.content.lower().startswith(f'{self.command_prefix}report') \
+                and not message.content.lower().startswith(f'{self.command_prefix}remove'):
             try:
                 await self.process_rick_rolls(message)
             except Exception as e:
@@ -73,12 +75,33 @@ class Rick(Astley):
     def is_youtube(self, url):
         return self.yt_pattern.fullmatch(url)
 
-    async def process_results(self, message, rick_rolls: dict):
+    async def process_results(self, message, rick_rolls: dict, redirects: dict):
+        print("RICK_ROLLS")
+        print(rick_rolls)
+        print("REDIRECTS")
+        print(redirects)
         if len(rick_rolls) > 1:
-            urls = '```'+'\n'.join(list(rick_rolls.keys()))+'```'
+            urls = ""
+            for url, info in rick_rolls.items():
+                original = redirects[url]
+                check = rick_rolls[url].check
+                extra = rick_rolls[url].extra
+                if original:
+                    for og in original:
+                        urls += f"\n{og} -> {url}"
+                elif check == 'redirect':
+                    urls += f"\n{original} -> {extra}"
+                else:
+                    urls += f"\n{url}"
             await message.channel.send(f"**⚠ Detected Rickroll at {len(rick_rolls)} URLs:\n**{urls}")
         else:
-            await message.channel.send(f"**⚠ Detected Rickroll at URL:\n**```{list(rick_rolls.keys())[0]}```")
+            url = list(rick_rolls.keys())[0]
+            original = redirects[url]
+            if original:
+                url = f"\n{', '.join(original)} -> {url}"
+            elif rick_rolls[url].check == 'redirect':
+                url = f"\n{original} -> {rick_rolls[url].extra}"
+            await message.channel.send(f"**⚠ Detected Rickroll at URL:\n**```{url}```")
 
     async def process_rick_rolls(self, message):
         """
@@ -93,18 +116,20 @@ class Rick(Astley):
         if not urls:
             return
 
-        rick_rolls = await self.find_rick_rolls(urls)
+        rick_rolls, redirects = await self.find_rick_rolls(urls)
 
         if not rick_rolls:
             return
 
-        await self.process_results(message, rick_rolls)
+        await self.process_results(message, rick_rolls, redirects)
 
         # write new rick rolls to Redis
         # todo: cache non-rick-rolls too
         for url, data in rick_rolls.items():
             if data.check != 'redis':
                 await self.redis.url_set(url, True, data.check, data.extra)
+            for original_url in redirects[url]:  # defaultdict so returns empty list if no associated redirects
+                await self.redis.url_set(original_url, True, 'redirect', url)
 
         return bool(rick_rolls)
 
@@ -114,6 +139,7 @@ class Rick(Astley):
         Returns breakdown of all detected rickroll links.
         """
         rick_rolls = dict()  # key: url, value: name of first check that caught this url
+        redirects = defaultdict(list)  # key: original url, value: resolved url
 
         # URLs in message
         original_urls = [url for url in urls]
@@ -123,14 +149,15 @@ class Rick(Astley):
 
         # check redis cache
         # redis will have them cached without the http:// part
-        rick_rolls, urls = await self.check_redis(rick_rolls, urls)
+        rick_rolls, urls, redirects = await self.check_redis(rick_rolls, urls, redirects)
 
         # handle redirects
-        responses = await self.resolve(urls)  # returns list of Response objects
+        # returns list of Response objects and map of resolved url -> list of original urls
+        responses, redirects = await self.resolve(urls, redirects)
 
         # check redis again, this time for any new URLs found after redirect
         redirect_urls = [strip_url(response.url.human_repr()) for response in responses if response.url.human_repr() not in original_urls]
-        rick_rolls, urls = await self.check_redis(rick_rolls, redirect_urls)
+        rick_rolls, urls, _ = await self.check_redis(rick_rolls, redirect_urls, {})
 
         # check for YouTube URLs
         # todo: non-youtube URLs should scrape and check for embedded YouTube video
@@ -142,9 +169,10 @@ class Rick(Astley):
         # check comments for any YouTube URLs that haven't already been flagged
         rick_rolls = await self.check_comments(rick_rolls, urls)
 
-        return rick_rolls
+        return rick_rolls, redirects
 
-    async def check_redis(self, rick_rolls, urls):
+    async def check_redis(self, rick_rolls, urls, redirects):
+        urls = [strip_url(url) for url in urls]
         for url in list(urls):
             if not url:
                 urls.remove(url)
@@ -154,20 +182,25 @@ class Rick(Astley):
                 continue
             is_rick_roll = redis.get('is_rick_roll')
             if is_rick_roll is True:  # it's a cached rick roll
-                rick_rolls[url] = RickRollData('redis', redis['detected_by'])  # makes note that this is a rick roll along with the check that found it
+                if redis.get('detected_by') == 'redirect':
+                    redirects[redis['extra']].append(url)
+                    rick_rolls[redis['extra']] = RickRollData('redis', redis['detected_by'])
+                else:
+                    rick_rolls[url] = RickRollData('redis', redis['detected_by'])  # makes note that this is a rick roll along with the check that found it
                 urls.remove(url)  # no longer needs to be checked
             elif is_rick_roll is False:  # it's a cached non-rick-roll
                 urls.remove(url)  # it's been confirmed false, no longer needs to be checked
             else:
                 logger.error(f"Database error, invalid result for URL: {url}")
-        return rick_rolls, urls
+        return rick_rolls, urls, redirects
 
-    async def resolve(self, urls):
+    async def resolve(self, urls, redirects):
         """
         Takes list of URL strings and returns list of Response objects with resolved URLs.
         """
-        resolved = set()
         responses = list()  # list of response objects to be passed on to next part
+        resolved = set()
+
         for url in list(urls):
             if not url:
                 urls.remove(url)
@@ -179,13 +212,17 @@ class Rick(Astley):
                 resolved_url = response.url.human_repr()
                 if resolved_url not in resolved:
                     responses.append(response)  # same response is held open to be used again for downloading the page
+                    if resolved_url != url:
+                        redirects[strip_url(response.url.human_repr())].append(strip_url(url))
                     resolved.add(resolved_url)
                 else:  # it resolves to a duplicate URL
                     # await response.release()
                     response.close()
+                    if resolved_url != url:
+                        redirects[strip_url(response.url.human_repr())].append(strip_url(url))
             except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError):
                 pass
-        return responses
+        return responses, redirects
 
     def filter_youtube(self, responses):
         """
