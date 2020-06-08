@@ -85,12 +85,10 @@ class Rick(Astley):
             for url, info in rick_rolls.items():
                 original = redirects[url]
                 check = rick_rolls[url].check
-                extra = rick_rolls[url].extra
                 if original:
-                    for og in original:
-                        urls += f"\n{og} -> {url}"
+                    urls += f"\n{', '.join(original)} -> {url}"
                 elif check == 'redirect':
-                    urls += f"\n{original} -> {extra}"
+                    urls += f"\n{original} -> {rick_rolls[url].extra}"
                 else:
                     urls += f"\n{url}"
             await message.channel.send(f"**⚠ Detected Rickroll at {len(rick_rolls)} URLs:\n**{urls}")
