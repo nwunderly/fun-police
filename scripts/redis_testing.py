@@ -10,13 +10,12 @@ r = redis.Redis(host='localhost', port=6379, db=0)
 
 for key in r.scan_iter():
     print(key)
-    if key.decode().startswith('www.'):
+    if len(key.decode()) < 5:
         print(' - deleting and replacing.')
         value = r.get(key)
         r.delete(key)
-        r.set(key.decode().replace('www.', ''), value)
 
 print('\n\n\n')
 
-for key in r.scan_iter():
-    print(key)
+# for key in r.scan_iter():
+#     print(key)

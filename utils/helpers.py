@@ -60,12 +60,10 @@ def strip_url(url):
             netloc = match.group(1)
         else:
             netloc = parsed.netloc
-        print(netloc)
-        print(parsed.path)
         _url = f"{netloc}"
-        _url += f"/{parsed.path}" if parsed.path else ''
-        _url += f"?{parsed.query}" if parsed.query else ''
-        return url
+        _url += f"{parsed.path}" if parsed.path else ''
+        _url += f"{parsed.query}" if parsed.query else ''
+        return _url
 
     # reassembles youtube address without unnecessary queries
     if parsed.netloc == 'www.youtube.com' or parsed.netloc == 'youtube.com':
@@ -83,3 +81,5 @@ def strip_url(url):
 
     # remove www. from misc URLs
     return remove_www()
+
+

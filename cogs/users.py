@@ -5,6 +5,7 @@ import datetime
 import sys
 import psutil
 
+from utils.detector import RickRollDetector
 from confidential import authentication
 
 
@@ -76,7 +77,8 @@ class Users(commands.Cog):
     async def check(self, ctx, *urls):
         """Scans a URL and returns a detailed report of the results."""
         await ctx.send("Checking URL...")
-        result = await self.bot.find_rick_rolls(urls)
+        detector = RickRollDetector(self.bot, list(urls))
+        result = await detector.find_rick_rolls()
         await ctx.send(result)
 
 
