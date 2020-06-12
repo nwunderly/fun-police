@@ -128,6 +128,16 @@ class Admin(commands.Cog):
             logger.error(traceback.format_exception(e.__class__, e, e.__traceback__))
             await ctx.send(f"{e.__class__}: {str(e)}")
 
+    @commands.command()
+    async def flag_domain(self, ctx, domain, is_rick_roll: bool = True, redirect_url='youtube.com/watch?v=dQw4w9WgXcQ'):
+        """Flag every URL within a certain domain as a rick roll. The bot will send a special message for these URLs."""
+        try:
+            await self.bot.redis.url_set(f"domain::{domain}", is_rick_roll, 'manual', redirect_url)
+            await ctx.send("Done.")
+        except Exception as e:
+            logger.error(traceback.format_exception(e.__class__, e, e.__traceback__))
+            await ctx.send(f"{e.__class__}: {str(e)}")
+
 
 def setup(bot):
     bot.add_cog(Admin(bot))

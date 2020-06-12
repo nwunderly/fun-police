@@ -1,6 +1,6 @@
 import logging
 
-from utils.helpers import strip_url
+from utils.helpers import strip_url, get_domain
 
 
 logger = logging.getLogger('utils.url')
@@ -14,8 +14,10 @@ class QuestionableURL:
 
     def __init__(self, url):
         self._original_url = url
+        self._original_domain = get_domain(url)
         self._stripped_original_url = strip_url(url)
         self._resolved_url = None
+        self._resolved_domain = None
         self._stripped_resolved_url = None
         self.response = None
         self._closed = False
@@ -34,6 +36,12 @@ class QuestionableURL:
             else:
                 return self._resolved_url
 
+    def domain(self):
+        if self._resolved_domain:
+            return self._resolved_domain
+        else:
+            return self._original_domain
+
     def update(self, response):
         if self._closed:
             raise ValueError("URL is closed.")
@@ -42,6 +50,7 @@ class QuestionableURL:
         self.response = response
         resolved = response.url.human_repr()
         self._resolved_url = resolved
+        self._resolved_domain = get_domain(resolved)
         self._stripped_resolved_url = strip_url(resolved)
 
     async def read(self, size=None):

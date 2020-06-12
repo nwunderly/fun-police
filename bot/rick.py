@@ -79,24 +79,43 @@ class Rick(Astley):
         print(redirects)
         if len(rick_rolls) > 1:
             urls = ""
+            domain = False
             for url, info in rick_rolls.items():
-                original = redirects[url]
+                original = ', '.join(redirects[url])
                 check = rick_rolls[url].check
-                if original:
-                    urls += f"\n{', '.join(original)} -> {url}"
+                print(f"CHECK: {check}")
+                if check == 'domain':
+                    urls += f"\n{original} -> {rick_rolls[url].extra}"
+                    domain = True
                 elif check == 'redirect':
                     urls += f"\n{original} -> {rick_rolls[url].extra}"
+                elif original:
+                    urls += f"\n{original} -> {url}"
                 else:
                     urls += f"\n{url}"
-            await message.channel.send(f"**⚠ Detected Rickroll at {len(rick_rolls)} URLs:\n**{urls}")
+            msg = f"**⚠ Detected Rickroll at {len(rick_rolls)} URLs:**```{urls}```"
+            if domain:
+                msg += "We cannot be stopped."
+            await message.channel.send(msg)
         else:
             url = list(rick_rolls.keys())[0]
-            original = redirects[url]
-            if original:
-                url = f"\n{', '.join(original)} -> {url}"
-            elif rick_rolls[url].check == 'redirect':
+            original = ', '.join(redirects[url])
+            check = rick_rolls[url].check
+            print(f"CHECK: {check}")
+            domain = False
+            if check == 'domain':
                 url = f"\n{original} -> {rick_rolls[url].extra}"
-            await message.channel.send(f"**⚠ Detected Rickroll at URL:\n**```{url}```")
+                domain = True
+            elif check == 'redirect':
+                url = f"\n{original} -> {rick_rolls[url].extra}"
+            elif original:
+                url = f"\n{original} -> {url}"
+            else:
+                url = f"\n{url}"
+            msg = f"**⚠ Detected Rickroll at URL:\n**```{url}```"
+            if domain:
+                msg += "We cannot be stopped."
+            await message.channel.send(msg)
 
     async def process_rick_rolls(self, message):
         """

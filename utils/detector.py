@@ -59,7 +59,7 @@ class RickRollDetector:
         await self.resolve()
 
         # check redis again, this time for any new URLs found after redirect
-        await self.check_redis()
+        await self.check_redis_again()
 
         # check for YouTube URLs
         # todo: non-youtube URLs should scrape and check for embedded YouTube video
@@ -86,38 +86,65 @@ class RickRollDetector:
                 used.add(u)
 
     async def check_redis(self):
-        """Checks redis cache for """
-        for url in self.urls:
-            url_obj = url
-            url = url.url()
+        """Checks redis cache for flagged URLs."""
+        for url_obj in self.urls:
+            url = url_obj.url()
+            domain = url_obj.domain()
 
-            redis = await self.redis.url_get(url)
-            if not redis or not isinstance(redis, dict):  # not cached, will continue on to the next set of checks
-                continue
-            is_rick_roll = redis.get('is_rick_roll')
+        # domain
+            print(f"DOMAIN: {domain}")
+            redis = await self.redis.url_get(f"domain::{domain}")
+            if redis and isinstance(redis, dict):  # if not cached, will continue on to the next set of checks
+                is_rick_roll = redis.get('is_rick_roll')
 
-            if is_rick_roll is True:  # it's a cached rick roll
+                if is_rick_roll is True:  # it's a cached rick roll
 
-                # this url is known to redirect to a rick roll
-                # slightly different procedure since output needs to include this information
-                if redis.get('detected_by') == 'redirect':
+                    # this domain is known to redirect all requests to a rick roll
+                    # slightly different procedure since output needs to include this information
                     original_url = redis['extra']
-                    print(f"105: adding {url} to redirect list")
                     self.redirects[original_url].append(url)
-                    self.rick_rolls[original_url] = RickRollData('redis', 'redirect')
+                    self.rick_rolls[original_url] = RickRollData('domain', original_url)
+                    self.urls.remove(url_obj)  # no longer needs to be checked
 
-                # standard procedure, logs it and moves on.
-                else:
-                    # makes note that this is a rick roll along with the check that found it
-                    self.rick_rolls[url] = RickRollData('redis', redis['detected_by'])
+                continue
 
-                self.urls.remove(url_obj)  # no longer needs to be checked
+        # url
+            redis = await self.redis.url_get(url)
+            if redis and isinstance(redis, dict):  # if not cached, will continue on to the next set of checks
+                is_rick_roll = redis.get('is_rick_roll')
 
-            elif is_rick_roll is False:  # it's a cached non-rick-roll
-                self.urls.remove(url_obj)  # it's been confirmed false, no longer needs to be checked
+                if is_rick_roll is True:  # it's a cached rick roll
 
-            else:  # weird error, invalid entry in redis, leaves this one in the list to be checked with other methods
-                logger.error(f"Database error, invalid result for URL: {url}")
+                    # this url is known to redirect to a rick roll
+                    # slightly different procedure since output needs to include this information
+                    if redis.get('detected_by') == 'redirect':
+                        original_url = redis['extra']
+                        self.redirects[original_url].append(url)
+                        self.rick_rolls[original_url] = RickRollData('redis', 'redirect')
+
+                elif is_rick_roll is False:  # it's a cached non-rick-roll
+                    self.urls.remove(url_obj)  # it's been confirmed false, no longer needs to be checked
+
+                else:  # weird error, invalid entry in redis, leaves this one in the list to be checked with other methods
+                    logger.error(f"Database error, invalid result for URL: {url}")
+
+                continue
+
+        # # domain
+        #     redis = await self.redis.url_get(f"domain::{domain}")
+        #     if redis and isinstance(redis, dict):  # if not cached, will continue on to the next set of checks
+        #         is_rick_roll = redis.get('is_rick_roll')
+        #
+        #         if is_rick_roll is True:  # it's a cached rick roll
+        #
+        #             # this domain is known to redirect all requests to a rick roll
+        #             # slightly different procedure since output needs to include this information
+        #             original_url = redis['extra']
+        #             self.redirects[original_url].append(url)
+        #             self.rick_rolls[original_url] = RickRollData('domain', original_url)
+        #             self.urls.remove(url_obj)  # no longer needs to be checked
+        #
+        #         return
 
     async def resolve(self):
         """
@@ -147,17 +174,48 @@ class RickRollDetector:
                     url_obj.close()
                     self.urls.remove(url_obj)
                     if resolved_url != url:
-                        print(f"149: adding {url} to redirect list")
                         self.redirects[resolved_url].append(original_url)
                 else:
                     # same response is held open to be used again for downloading the page
                     if resolved_url != url:
-                        print(f"154: adding {url} to redirect list")
                         self.redirects[resolved_url].append(original_url)
                     resolved.add(resolved_url)
 
             except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError):
-                pass
+                self.urls.remove(url_obj)
+
+    async def check_redis_again(self):
+        """Checks redis for any cached URLs after redirect."""
+        for url_obj in self.urls:
+            url = url_obj.url()
+
+            redis = await self.redis.url_get(url)
+            if not redis or not isinstance(redis, dict):  # not cached, will continue on to the next set of checks
+                continue
+            is_rick_roll = redis.get('is_rick_roll')
+
+            if is_rick_roll is True:  # it's a cached rick roll
+
+                # this url is known to redirect to a rick roll
+                # slightly different procedure since output needs to include this information
+                if redis.get('detected_by') == 'redirect':
+                    original_url = redis['extra']
+                    print(f"105: adding {url} to redirect list")
+                    self.redirects[original_url].append(url)
+                    self.rick_rolls[original_url] = RickRollData('redis', 'redirect')
+
+                # standard procedure, logs it and moves on.
+                else:
+                    # makes note that this is a rick roll along with the check that found it
+                    self.rick_rolls[url] = RickRollData('redis', redis['detected_by'])
+
+                self.urls.remove(url_obj)  # no longer needs to be checked
+
+            elif is_rick_roll is False:  # it's a cached non-rick-roll
+                self.urls.remove(url_obj)  # it's been confirmed false, no longer needs to be checked
+
+            else:  # weird error, invalid entry in redis, leaves this one in the list to be checked with other methods
+                logger.error(f"Database error, invalid result for URL: {url}")
 
     def filter_youtube(self):
         """
@@ -169,6 +227,9 @@ class RickRollDetector:
             if not match:
                 url_obj.close()
                 self.urls.remove(url_obj)  # removes if not youtube, otherwise leaves it
+                logger.debug(f"filter_youtube: removing URL {url}")
+            else:
+                logger.debug(f"filter_youtube: keeping URL {url}")
 
     async def check_youtube_html(self):
         """

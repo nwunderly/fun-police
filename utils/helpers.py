@@ -83,3 +83,8 @@ def strip_url(url):
     return remove_www()
 
 
+def get_domain(url):
+    url = url if (url.startswith('https://') or url.startswith('http://')) else 'http://' + url
+    parsed = urlparse(url)
+    return parsed.netloc
+
