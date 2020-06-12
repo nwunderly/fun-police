@@ -95,7 +95,7 @@ class Rick(Astley):
                     urls += f"\n{url}"
             msg = f"**⚠ Detected Rickroll at {len(rick_rolls)} URLs:**```{urls}```"
             if domain:
-                msg += "We cannot be stopped."
+                msg += "I'm never going to let you down."
             await message.channel.send(msg)
         else:
             url = list(rick_rolls.keys())[0]
@@ -114,7 +114,7 @@ class Rick(Astley):
                 url = f"\n{url}"
             msg = f"**⚠ Detected Rickroll at URL:\n**```{url}```"
             if domain:
-                msg += "We cannot be stopped."
+                msg += "I'm never going to let you down."
             await message.channel.send(msg)
 
     async def process_rick_rolls(self, message):
