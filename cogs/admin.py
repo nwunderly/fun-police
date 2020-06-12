@@ -3,6 +3,7 @@ from discord.ext import commands
 
 import traceback
 import logging
+import dbl
 
 from confidential.authentication import YOUTUBE_API_KEY, DBL_TOKEN
 
