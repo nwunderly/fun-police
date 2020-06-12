@@ -4,7 +4,7 @@ from discord.ext import commands
 import traceback
 import logging
 
-from confidential.authentication import YOUTUBE_API_KEY
+from confidential.authentication import YOUTUBE_API_KEY, DBL_TOKEN
 
 
 logger = logging.getLogger('cogs.admin')
@@ -13,6 +13,16 @@ logger = logging.getLogger('cogs.admin')
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.dbl_token = DBL_TOKEN
+        self.dblpy = dbl.DBLClient(self.bot, self.dbl_token) # sets up class with necessary info to complete requests for top.gg
+        
+    @commands.command()
+    async def update_stats(self, ctx):
+        try:
+            await self.dblpy.post_guild_count() # posts guild count to top.gg with the necessary info
+            logger.info('Sent post request.') # Success!
+        except Exception as e:
+            logger.info(f'Error occoured while posting stats:\n{e}') # Error occoured, Logging result.
 
     def cog_check(self, ctx):
         return ctx.author.id in [448250281097035777, 204414611578028034]
