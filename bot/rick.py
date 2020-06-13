@@ -73,20 +73,18 @@ class Rick(Astley):
         return self.yt_pattern.fullmatch(url)
 
     async def process_results(self, message, rick_rolls: dict, redirects: dict):
-        print("RICK_ROLLS")
-        print(rick_rolls)
-        print("REDIRECTS")
-        print(redirects)
+        logger.debug("RICK_ROLLS")
+        logger.debug(rick_rolls)
+        logger.debug("REDIRECTS")
+        logger.debug(redirects)
         if len(rick_rolls) > 1:
             urls = ""
-            domain = False
             for url, info in rick_rolls.items():
                 original = ', '.join(redirects[url])
                 check = rick_rolls[url].check
-                print(f"CHECK: {check}")
+                logger.debug(f"CHECK: {check}")
                 if check == 'domain':
                     urls += f"\n{original} -> {rick_rolls[url].extra}"
-                    domain = True
                 elif check == 'redirect':
                     urls += f"\n{original} -> {rick_rolls[url].extra}"
                 elif original:
@@ -94,18 +92,14 @@ class Rick(Astley):
                 else:
                     urls += f"\n{url}"
             msg = f"**⚠ Detected Rickroll at {len(rick_rolls)} URLs:**```{urls}```"
-            if domain:
-                msg += "I'm never going to let you down."
             await message.channel.send(msg)
         else:
             url = list(rick_rolls.keys())[0]
             original = ', '.join(redirects[url])
             check = rick_rolls[url].check
-            print(f"CHECK: {check}")
-            domain = False
+            logger.debug(f"CHECK: {check}")
             if check == 'domain':
                 url = f"\n{original} -> {rick_rolls[url].extra}"
-                domain = True
             elif check == 'redirect':
                 url = f"\n{original} -> {rick_rolls[url].extra}"
             elif original:
@@ -113,8 +107,6 @@ class Rick(Astley):
             else:
                 url = f"\n{url}"
             msg = f"**⚠ Detected Rickroll at URL:\n**```{url}```"
-            if domain:
-                msg += "I'm never going to let you down."
             await message.channel.send(msg)
 
     async def process_rick_rolls(self, message):

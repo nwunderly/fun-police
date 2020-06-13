@@ -9,10 +9,12 @@ r = redis.Redis(host='localhost', port=6379, db=0)
 # b'bar'
 
 for key in r.scan_iter():
+    key = key.decode()
     print(key)
-    if len(key.decode()) < 5:
-        print(' - deleting and replacing.')
-        value = r.get(key)
+    item = eval(r.get(key).decode())
+    print(item)
+    if item['extra'] == key:
+        print("REMOVING")
         r.delete(key)
 
 print('\n\n\n')

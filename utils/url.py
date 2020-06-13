@@ -56,9 +56,9 @@ class QuestionableURL:
     async def read(self, size=None):
         if self.response:
             if size:
-                return await self.response.read(size)
+                return (await self.response.read(size)).decode()
             else:
-                return await self.response.read()
+                return (await self.response.read()).decode()
         else:
             raise ValueError("URL has not been updated with a response and cannot be read.")
 

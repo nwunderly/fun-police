@@ -36,7 +36,7 @@ class RickRollDetector:
         self.urls = [QuestionableURL(url) for url in urls]
 
         # stripped final url: [stripped initial urls]
-        self.redirects = defaultdict(list)
+        self.redirects = defaultdict(set)
 
         # stripped final url: RickRollData
         self.rick_rolls = dict()
@@ -50,26 +50,61 @@ class RickRollDetector:
         # remove duplicate URLs
         self.remove_dupes()
 
+        logger.debug(f"LINE 53:")
+        logger.debug(f"URLS: {self.urls}")
+        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
+        logger.debug(f"REDIRECTS: {self.redirects}")
+
         # check redis cache
         # redis will have them cached without the http:// part
         await self.check_redis()
+
+        logger.debug(f"LINE 62:")
+        logger.debug(f"URLS: {self.urls}")
+        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
+        logger.debug(f"REDIRECTS: {self.redirects}")
 
         # handle redirects
         # returns list of Response objects and map of resolved url -> list of original urls
         await self.resolve()
 
+        logger.debug(f"LINE 71:")
+        logger.debug(f"URLS: {self.urls}")
+        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
+        logger.debug(f"REDIRECTS: {self.redirects}")
+
         # check redis again, this time for any new URLs found after redirect
         await self.check_redis_again()
+
+        logger.debug(f"LINE 79:")
+        logger.debug(f"URLS: {self.urls}")
+        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
+        logger.debug(f"REDIRECTS: {self.redirects}")
 
         # check for YouTube URLs
         # todo: non-youtube URLs should scrape and check for embedded YouTube video
         self.filter_youtube()
 
+        logger.debug(f"LINE 88:")
+        logger.debug(f"URLS: {self.urls}")
+        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
+        logger.debug(f"REDIRECTS: {self.redirects}")
+
         # download YouTube pages and check with rick roll regex
         await self.check_youtube_html()
 
+        logger.debug(f"LINE 96:")
+        logger.debug(f"URLS: {self.urls}")
+        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
+        logger.debug(f"REDIRECTS: {self.redirects}")
+
         # check comments for any YouTube URLs that haven't already been flagged
         await self.check_comments()
+
+        logger.debug(f"LINE 104:")
+        logger.debug(f"URLS: {self.urls}")
+        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
+        logger.debug(f"REDIRECTS: {self.redirects}")
 
         return self.rick_rolls, self.redirects
 
@@ -92,7 +127,7 @@ class RickRollDetector:
             domain = url_obj.domain()
 
         # domain
-            print(f"DOMAIN: {domain}")
+            logger.debug(f"DOMAIN: {domain}")
             redis = await self.redis.url_get(f"domain::{domain}")
             if redis and isinstance(redis, dict):  # if not cached, will continue on to the next set of checks
                 is_rick_roll = redis.get('is_rick_roll')
@@ -102,7 +137,7 @@ class RickRollDetector:
                     # this domain is known to redirect all requests to a rick roll
                     # slightly different procedure since output needs to include this information
                     original_url = redis['extra']
-                    self.redirects[original_url].append(url)
+                    self.redirects[original_url].add(url)
                     self.rick_rolls[original_url] = RickRollData('domain', original_url)
                     self.urls.remove(url_obj)  # no longer needs to be checked
 
@@ -119,8 +154,9 @@ class RickRollDetector:
                     # slightly different procedure since output needs to include this information
                     if redis.get('detected_by') == 'redirect':
                         original_url = redis['extra']
-                        self.redirects[original_url].append(url)
+                        self.redirects[original_url].add(url)
                         self.rick_rolls[original_url] = RickRollData('redis', 'redirect')
+                        self.urls.remove(url_obj)
 
                 elif is_rick_roll is False:  # it's a cached non-rick-roll
                     self.urls.remove(url_obj)  # it's been confirmed false, no longer needs to be checked
@@ -173,15 +209,21 @@ class RickRollDetector:
                     # it resolves to a duplicate URL
                     url_obj.close()
                     self.urls.remove(url_obj)
-                    if resolved_url != url:
-                        self.redirects[resolved_url].append(original_url)
+                    if resolved_url != original_url:
+                        logger.debug("LINE 213")
+                        logger.debug(resolved_url)
+                        logger.debug(original_url)
+                        self.redirects[resolved_url].add(original_url)
                 else:
                     # same response is held open to be used again for downloading the page
-                    if resolved_url != url:
-                        self.redirects[resolved_url].append(original_url)
+                    if resolved_url != original_url:
+                        logger.debug("LINE 221")
+                        logger.debug(resolved_url)
+                        logger.debug(original_url)
+                        self.redirects[resolved_url].add(original_url)
                     resolved.add(resolved_url)
 
-            except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError):
+            except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError, aiohttp.ClientConnectionError):
                 self.urls.remove(url_obj)
 
     async def check_redis_again(self):
@@ -200,8 +242,7 @@ class RickRollDetector:
                 # slightly different procedure since output needs to include this information
                 if redis.get('detected_by') == 'redirect':
                     original_url = redis['extra']
-                    print(f"105: adding {url} to redirect list")
-                    self.redirects[original_url].append(url)
+                    self.redirects[original_url].add(url)
                     self.rick_rolls[original_url] = RickRollData('redis', 'redirect')
 
                 # standard procedure, logs it and moves on.
