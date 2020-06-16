@@ -11,15 +11,16 @@ from bot.rick import Rick
 
 
 logger = logging.getLogger("launcher")
-setup_logger('launcher')
-setup_logger('bot')
-setup_logger('utils')
-setup_logger('cogs')
 
 
 def start(_args):
     debug = _args.debug
     dev_bot = _args.dev_bot
+
+    setup_logger('launcher', debug)
+    setup_logger('bot', debug)
+    setup_logger('utils', debug)
+    setup_logger('cogs', debug)
 
     logger.info(f"Starting bot.")
 

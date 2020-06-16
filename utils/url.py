@@ -31,10 +31,10 @@ class QuestionableURL:
             else:
                 return self._stripped_original_url
         else:
-            if self._original_url:
-                return self._original_url
-            else:
+            if self._resolved_url:
                 return self._resolved_url
+            else:
+                return self._original_url
 
     def domain(self):
         if self._resolved_domain:

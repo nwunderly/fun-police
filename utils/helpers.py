@@ -11,14 +11,17 @@ from urllib.parse import urlparse, parse_qs
 logger = logging.getLogger('utils.helpers')
 
 
-def setup_logger(name):
+def setup_logger(name, debug):
     logger = logging.getLogger(name)
     d = datetime.datetime.now()
     time = f"{d.month}-{d.day}_{d.hour}h{d.minute}m"
 
     if sys.platform == 'linux':
         filename = '/home/rick/logs/{}.log'
-        level = logging.INFO
+        if debug:
+            level = logging.DEBUG
+        else:
+            level = logging.INFO
     else:
         filename = './logs/{}.log'
         level = logging.DEBUG
