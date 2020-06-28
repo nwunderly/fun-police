@@ -2,8 +2,8 @@ import discord
 from discord.ext import commands
 
 import datetime
-import sys
 import psutil
+import random
 
 from utils.detector import RickRollDetector
 from confidential import authentication
@@ -32,7 +32,7 @@ class Users(commands.Cog):
     async def about(self, ctx):
         """Some info about me!"""
         embed = discord.Embed(color=ctx.author.color)
-        embed.description = "Check out our [website](https://www.youtube.com/watch?v=dQw4w9WgXcQ)!"
+        embed.description = random.choice(f"{self.bot.description}", f"Check out our [website](https://www.youtube.com/watch?v=dQw4w9WgXcQ)!")
         embed.set_author(name=str(self.bot.user), icon_url=self.bot.user.avatar_url)
         embed.add_field(name="Version", value=self.bot.properties.version)
         embed.add_field(name="Library", value='discord.py')
@@ -80,6 +80,15 @@ class Users(commands.Cog):
         detector = RickRollDetector(self.bot, list(urls))
         result = await detector.find_rick_rolls()
         await ctx.send(result)
+
+    @commands.command()
+    async def vote(self, ctx):
+        lists = "Please consider voting if you like our bot!\n" \
+                "<https://top.gg/bot/687454860907511881>\n"\
+                "<https://discord.bots.gg/bots/687454860907511881>\n"\
+                "<https://discordbotlist.com/bots/fun-police>\n"\
+                "<https://bots.ondiscord.xyz/bots/687454860907511881>"
+        await ctx.send(lists)
 
 
 def setup(bot):

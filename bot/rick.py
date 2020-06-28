@@ -24,6 +24,7 @@ class Rick(Astley):
     """
     def __init__(self):
         super().__init__()
+        self.description = "The best Discord bot for detecting Rick rolls."
         self.url_pattern = url_pattern
         self.yt_pattern = yt_pattern
         self.rickroll_pattern = rickroll_pattern

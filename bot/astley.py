@@ -55,7 +55,7 @@ class Astley(commands.AutoShardedBot):
         logger.info('Bot is ready.')
 
     async def on_command_completion(self, ctx):
-        logger.info(f"Command '{ctx.command.qualified_name}' invoked by user {ctx.author.id} in channel {ctx.channel.id}, guild {ctx.guild.id}.")
+        logger.debug(f"Command '{ctx.command.qualified_name}' invoked by user {ctx.author.id} in channel {ctx.channel.id}, guild {ctx.guild.id}.")
 
     def sd_notify(self, text):
         logger.debug(f"Sending sd_notify: {text}")
