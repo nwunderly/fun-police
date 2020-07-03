@@ -28,12 +28,12 @@ def start(_args):
 
     bot = Rick()
 
-    if sys.platform != 'linux' or debug:
-        try:
-            logger.info("Adding debug cog.")
-            bot.load_extension('jishaku')
-        except commands.ExtensionFailed:
-            pass
+    # if sys.platform != 'linux' or debug:
+    try:
+        logger.info("Adding debug cog.")
+        bot.load_extension('jishaku')
+    except commands.ExtensionFailed:
+        pass
 
     try:
         bot.run(bot=('main' if not dev_bot else 'dev'))
