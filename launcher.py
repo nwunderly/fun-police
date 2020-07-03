@@ -21,7 +21,7 @@ def start(_args):
     setup_logger('bot', debug)
     setup_logger('utils', debug)
     setup_logger('cogs', debug)
-    setup_logger('discord', True)
+    setup_logger('discord', False)
 
 
     logger.info(f"Starting bot.")
