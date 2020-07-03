@@ -332,7 +332,7 @@ class RickRollDetector:
             except AttributeError as e:
                 exc = traceback.format_exception(e.__class__, e, e.__traceback__)
                 exc = '\n'.join(exc)
-                logger.error(f"SOUP ERROR DETECTED\nWITH URL {url_obj.url(stripped=False)}\nHTTP CODE {url_obj.response.status}\nHTML\n{html}\nTRACEBACK\n{exc}")
+                logger.debug(f"SOUP ERROR DETECTED\nWITH URL {url_obj.url(stripped=False)}\nHTTP CODE {url_obj.response.status}\nHTML\n{html}\nTRACEBACK\n{exc}")
                 hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
                 try:
                     await hook.send(f"SOUP ERROR DETECTED\nWITH URL <{url_obj.url(stripped=False)}>\nHTTP CODE {url_obj.response.status}")
