@@ -42,13 +42,12 @@ class QuestionableURL:
         else:
             return self._original_domain
 
-    def update(self, response):
+    def update(self, url):
         if self._closed:
             raise ValueError("URL is closed.")
         if self._resolved_url:
             raise ValueError("This URL has already been updated.")
-        self.response = response
-        resolved = response.url.human_repr()
+        resolved = url
         self._resolved_url = resolved
         self._resolved_domain = get_domain(resolved)
         self._stripped_resolved_url = strip_url(resolved)

@@ -123,8 +123,9 @@ class Rick(Astley):
         if not urls:
             return
 
-        detector = RickRollDetector(self, urls)
-        rick_rolls, redirects = await detector.find_rick_rolls()
+        async with aiohttp.ClientSession() as session:
+            detector = RickRollDetector(self, urls, session)
+            rick_rolls, redirects = await detector.find_rick_rolls()
 
         if not rick_rolls:
             return

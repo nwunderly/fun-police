@@ -9,9 +9,9 @@ import discord
 from discord.ext import commands
 
 from utils.patterns import *
-from utils.helpers import strip_url
+from utils.helpers import strip_url, get_domain
 from utils.url import QuestionableURL
-from confidential import authentication
+from confidential import authentication, requests
 
 
 logger = logging.getLogger('utils.detector')
@@ -22,13 +22,17 @@ RickRollData = namedtuple('RickRollData', ['check', 'extra'])
 # extra is extra data (specific section for soup, percent of flagged comments, etc)
 
 
+class YoutubeResolveError(Exception):
+    pass
+
+
 class RickRollDetector:
     """
     Wraps up all methods used for checking a single message for rick rolls.
     """
-    def __init__(self, bot, urls: list):
+    def __init__(self, bot, urls: list, session):
         self.bot = bot
-        self.session = bot.session
+        self.session = session
         self.redis = bot.redis
         self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
 
@@ -50,63 +54,33 @@ class RickRollDetector:
         # remove duplicate URLs
         self.remove_dupes()
 
-        logger.debug(f"LINE 53:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
         # check redis cache
         # redis will have them cached without the http:// part
         await self.check_redis()
 
-        logger.debug(f"LINE 62:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
         # handle redirects
-        # returns list of Response objects and map of resolved url -> list of original urls
+        # returns list of url strings and map of resolved url -> list of original urls
         await self.resolve()
 
-        logger.debug(f"LINE 71:")
+        logger.debug(f"LINE 65:")
         logger.debug(f"URLS: {[url.url() for url in self.urls]}")
         logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
         logger.debug(f"REDIRECTS: {self.redirects}")
 
-        # check redis again, this time for any new URLs found after redirect
-        await self.check_redis_again()
-
-        logger.debug(f"LINE 79:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
-        # check for YouTube URLs
-        # todo: non-youtube URLs should scrape and check for embedded YouTube video
-        self.filter_youtube()
-
-        logger.debug(f"LINE 88:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
-        # download YouTube pages and check with rick roll regex
-        await self.check_youtube_html()
-
-        logger.debug(f"LINE 96:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
-        # check comments for any YouTube URLs that haven't already been flagged
-        await self.check_comments()
-
-        logger.debug(f"LINE 104:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
-        return self.rick_rolls, self.redirects
+        # TODO: EVERYTHING BELOW THIS POINT NEEDS REWRITE
+        # # check redis again, this time for any new URLs found after redirect
+        # await self.check_redis_again()
+        #
+        # # check for YouTube URLs
+        # self.filter_youtube()
+        #
+        # # download YouTube pages and check with rick roll regex
+        # await self.check_youtube_html()
+        #
+        # # check comments for any YouTube URLs that haven't already been flagged
+        # await self.check_comments()
+        #
+        # return self.rick_rolls, self.redirects
 
     def remove_dupes(self):
         """
@@ -192,8 +166,24 @@ class RickRollDetector:
 
     async def resolve(self):
         """
-        Takes list of URL strings and returns list of Response objects with resolved URLs.
+        Takes list of URL strings and returns list of resolved youtube urls.
         """
+
+        async def get(_url, recursions=0):
+
+            domain = get_domain(_url)
+            if re.match(r'(?:.*\.)*(?:youtube\.com|youtu\.be)', domain):
+                return _url
+
+            _response = await self.session.get(_url, allow_redirects=False)
+            if 300 <= _response.status <= 399:
+                location = _response.headers.get('Location')
+                if location:
+                    if recursions >= 3:
+                        raise YoutubeResolveError("Too many redirects.")
+                    _response = await get(location, recursions+1)
+
+            raise YoutubeResolveError("URL does not redirect and is not a YouTube URL.")
 
         for url in list(self.urls):
             if not url:
@@ -209,8 +199,8 @@ class RickRollDetector:
                 if not url.startswith('http'):
                     url = 'http://' + url
 
-                response = await self.session.get(url)
-                url_obj.update(response)
+                youtube_url = await get(url)
+                url_obj.update(youtube_url)
                 resolved_url = url_obj.url()
 
                 if resolved_url in resolved:
@@ -218,21 +208,16 @@ class RickRollDetector:
                     url_obj.close()
                     self.urls.remove(url_obj)
                     if resolved_url != original_url:
-                        logger.debug("LINE 213")
-                        logger.debug(resolved_url)
-                        logger.debug(original_url)
                         self.redirects[resolved_url].add(original_url)
                 else:
                     # same response is held open to be used again for downloading the page
                     if resolved_url != original_url:
-                        logger.debug("LINE 221")
-                        logger.debug(resolved_url)
-                        logger.debug(original_url)
                         self.redirects[resolved_url].add(original_url)
                     resolved.add(resolved_url)
 
-            except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError, aiohttp.ClientConnectionError):
+            except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError, aiohttp.ClientConnectionError, YoutubeResolveError):
                 self.urls.remove(url_obj)
+
 
     async def check_redis_again(self):
         """Checks redis for any cached URLs after redirect."""
