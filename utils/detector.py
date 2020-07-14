@@ -11,7 +11,7 @@ from discord.ext import commands
 from utils.patterns import *
 from utils.helpers import strip_url
 from utils.url import QuestionableURL
-from confidential import authentication, requests
+from confidential import authentication
 
 
 logger = logging.getLogger('utils.detector')
@@ -28,7 +28,7 @@ class RickRollDetector:
     """
     def __init__(self, bot, urls: list):
         self.bot = bot
-        self.session = aiohttp.ClientSession()
+        self.session = bot.session
         self.redis = bot.redis
         self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
 
@@ -209,7 +209,7 @@ class RickRollDetector:
                 if not url.startswith('http'):
                     url = 'http://' + url
 
-                response = await requests.get(self.session, url)
+                response = await self.session.get(url)
                 url_obj.update(response)
                 resolved_url = url_obj.url()
 
