@@ -18,13 +18,12 @@ def setup_logger(name, debug):
 
     if sys.platform == 'linux':
         filename = '/home/rick/logs/{}.log'
-        if debug:
-            level = logging.DEBUG
-        else:
-            level = logging.INFO
     else:
         filename = './logs/{}.log'
+    if debug:
         level = logging.DEBUG
+    else:
+        level = logging.INFO
 
     file_handler = logging.FileHandler(filename.format(time))
     # file_handler.setLevel(level)

@@ -11,7 +11,7 @@ from discord.ext import commands
 from utils.patterns import *
 from utils.helpers import strip_url, get_domain
 from utils.url import QuestionableURL
-from confidential import authentication, requests
+from confidential import authentication
 
 
 logger = logging.getLogger('utils.detector')
@@ -68,8 +68,8 @@ class RickRollDetector:
         logger.debug(f"REDIRECTS: {self.redirects}")
 
         # TODO: EVERYTHING BELOW THIS POINT NEEDS REWRITE
-        # # check redis again, this time for any new URLs found after redirect
-        # await self.check_redis_again()
+        # check redis again, this time for any new URLs found after redirect
+        await self.check_redis_again()
         #
         # # check for YouTube URLs
         # self.filter_youtube()
@@ -80,7 +80,7 @@ class RickRollDetector:
         # # check comments for any YouTube URLs that haven't already been flagged
         # await self.check_comments()
         #
-        # return self.rick_rolls, self.redirects
+        return self.rick_rolls, self.redirects
 
     def remove_dupes(self):
         """
@@ -172,16 +172,18 @@ class RickRollDetector:
         async def get(_url, recursions=0):
 
             domain = get_domain(_url)
+            logger.debug(f"DOMAIN: {domain}")
             if re.match(r'(?:.*\.)*(?:youtube\.com|youtu\.be)', domain):
                 return _url
 
             _response = await self.session.get(_url, allow_redirects=False)
             if 300 <= _response.status <= 399:
                 location = _response.headers.get('Location')
+                logger.debug(f"URL {_url} redirects to {location}")
                 if location:
                     if recursions >= 3:
                         raise YoutubeResolveError("Too many redirects.")
-                    _response = await get(location, recursions+1)
+                    return await get(location, recursions+1)
 
             raise YoutubeResolveError("URL does not redirect and is not a YouTube URL.")
 
@@ -215,7 +217,8 @@ class RickRollDetector:
                         self.redirects[resolved_url].add(original_url)
                     resolved.add(resolved_url)
 
-            except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError, aiohttp.ClientConnectionError, YoutubeResolveError):
+            except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError, aiohttp.ClientConnectionError, YoutubeResolveError) as e:
+                logger.debug(f"removing URL {url} ({e})")
                 self.urls.remove(url_obj)
 
 
@@ -224,10 +227,13 @@ class RickRollDetector:
         for url_obj in list(self.urls):
             url = url_obj.url()
 
+            logger.debug(f"CHECK_REDIS_AGAIN: CHECKING {url}")
+
             redis = await self.redis.url_get(url)
             if not redis or not isinstance(redis, dict):  # not cached, will continue on to the next set of checks
                 continue
             is_rick_roll = redis.get('is_rick_roll')
+            logger.debug(str(is_rick_roll))
 
             if is_rick_roll is True:  # it's a cached rick roll
 
