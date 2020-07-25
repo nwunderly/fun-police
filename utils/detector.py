@@ -1,9 +1,9 @@
-
 import aiohttp
 import logging
 import traceback
 from bs4 import BeautifulSoup
 from collections import defaultdict, namedtuple
+from urllib.parse import urlparse, parse_qs
 
 import discord
 from discord.ext import commands
@@ -18,6 +18,7 @@ logger = logging.getLogger('utils.detector')
 
 
 RickRollData = namedtuple('RickRollData', ['check', 'extra'])
+VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos?key={key}&part=snippet&id={id}"
 # check is name of check (redis, soup, comments, etc)
 # extra is extra data (specific section for soup, percent of flagged comments, etc)
 
@@ -91,7 +92,7 @@ class RickRollDetector:
         logger.debug(f"REDIRECTS: {self.redirects}")
 
         # download YouTube pages and check with rick roll regex
-        await self.check_youtube_html()
+        await self.check_youtube_video_data()
 
         logger.debug(f"LINE 96:")
         logger.debug(f"URLS: {[url.url() for url in self.urls]}")
@@ -282,7 +283,7 @@ class RickRollDetector:
             else:
                 logger.debug(f"filter_youtube: keeping URL {url}")
 
-    async def check_youtube_html(self):
+    async def check_youtube_video_data(self):
         """
         Uses web scraping to check YouTube page title, video title, and video description
         Returns updated rick roll data and URLs that tested negative (to be checked using YouTube API)
@@ -295,49 +296,54 @@ class RickRollDetector:
             # data = await response.content.read(10**6)  # reads up to 1 megabyte
             # html = data.decode()
 
-            html = await url_obj.read()
+            parsed_url = urlparse(url)
 
-            soup = BeautifulSoup(html, features="html.parser")
+            # different methods for different urls.
+            if parsed_url.netloc.endswith("youtube.com"):
+                v = parse_qs(parsed_url.query)
+                if v:
+                    # gets the video's id from the url's queries, specifically the `v` tag.
+                    video_id = v.get('v')[0]
 
-            try:
-                # check page title
-                if len(list(rickroll_pattern.finditer(soup.head.title.text.lower()))) > 0:
-                    self.rick_rolls[url] = RickRollData('soup', 'page-title')
-                    url_obj.close()
-                    self.urls.remove(url_obj)
+            elif parsed_url.netloc == "youtu.be":
+                # returns the last characters of the shorter youtu.be url.
+                video_id = parsed_url.path[1:]
 
-                # check video title
-                elif len(list(rickroll_pattern.finditer(soup.find(id='eow-title').text.lower()))) > 0:
-                    self.rick_rolls[url] = RickRollData('soup', 'video-title')
-                    url_obj.close()
-                    self.urls.remove(url_obj)
-
-                # check video description
-                elif len(list(rickroll_pattern.finditer(soup.find(id='eow-description').text.lower()))) > 0:
-                    self.rick_rolls[url] = RickRollData('soup', 'video-description')
-                    url_obj.close()
-                    self.urls.remove(url_obj)
-
-                # check SME recommended video (youtube automatically adds this when it detects a song)
-                elif len(list(rickroll_pattern.finditer(soup.find('ul', {'class': 'watch-extras-section'}).text.lower()))) > 0:
-                    self.rick_rolls[url] = RickRollData('soup', 'recommended')
-                    url_obj.close()
-                    self.urls.remove(url_obj)
-
-                else:
-                    # regex did not return positive, do not remove url from list
-                    # self.urls will be all URLs that haven't been checked yet.
-                    pass
-
-            except AttributeError as e:
-                exc = traceback.format_exception(e.__class__, e, e.__traceback__)
-                exc = '\n'.join(exc)
-                logger.debug(f"SOUP ERROR DETECTED\nWITH URL {url_obj.url(stripped=False)}\nHTTP CODE {url_obj.response.status}\nHTML\n{html}\nTRACEBACK\n{exc}")
-                hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+            if video_id:
                 try:
-                    await hook.send(f"SOUP ERROR DETECTED\nWITH URL <{url_obj.url(stripped=False)}>\nHTTP CODE {url_obj.response.status}")
-                except discord.DiscordException:
-                    logger.error("Failed to log error to logging channel.")
+                    # format the api url to request the video attached to this video_id.
+                    youtube_api_url = VIDEO_URL.format(key=authentication.YOUTUBE_API_KEY, id=video_id)
+
+                    response = await self.session.get(youtube_api_url)
+                    snippet = response["snippet"]
+
+                    if len(list(rickroll_pattern.finditer(snippet["title"].lower()))) > 0:
+                        self.rick_rolls[url] = RickRollData("youtube-api", "video-title")
+                        url_obj.close()
+                        self.urls.remove(url_obj)
+
+                    elif len(list(rickroll_pattern.finditer(snippet["description"].lower()))) > 0:
+                        self.rick_rolls[url] = RickRollData('youtube-api', 'video-description')
+                        url_obj.close()
+                        self.urls.remove(url_obj)
+
+                    else:
+                        # regex detected no rickrolls, don't remove from url list.
+                        pass
+
+                except KeyError as e:
+                    # error occoured with youtube api request, send to error channel and log it.
+                    exc = traceback.format_exception(e.__class__, e, e.__traceback__)
+                    exc = '\n'.join(exc)
+                    logger.debug(
+                        f"YOUTUBE API ERROR DETECTED\nWITH URL {url_obj.url(stripped=False)}\nYOUTUBE API URL {youtube_api_url}\nHTTP CODE {url_obj.response.status}\nTRACEBACK\n{exc}")
+                    hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'],
+                                                    adapter=discord.AsyncWebhookAdapter(self.session))
+                    try:
+                        await hook.send(
+                            f"YOUTUBE API ERROR DETECTED\nWITH URL {url_obj.url(stripped=False)}\nHTTP CODE {url_obj.response.status}\n")
+                    except discord.DiscordException:
+                        logger.error("Failed to log error to logging channel.")
 
     async def check_comments(self):
         """
@@ -381,5 +387,3 @@ class RickRollDetector:
             return True, percent, count
         else:
             return False, percent, count
-
-
