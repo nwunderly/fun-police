@@ -27,6 +27,10 @@ class YoutubeResolveError(Exception):
     pass
 
 
+class YoutubeApiError(Exception):
+    pass
+
+
 class RickRollDetector:
     """
     Wraps up all methods used for checking a single message for rick rolls.
@@ -63,43 +67,18 @@ class RickRollDetector:
         # returns list of url strings and map of resolved url -> list of original urls
         await self.resolve()
 
-        logger.debug(f"LINE 66:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
         # check redis again, this time for any new URLs found after redirect
         await self.check_redis_again()
-
-        logger.debug(f"LINE 74:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
 
         # check for YouTube URLs
         # todo: non-youtube URLs should scrape and check for embedded YouTube video
         self.filter_youtube()
 
-        logger.debug(f"LINE 83:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
         # download YouTube pages and check with rick roll regex
         await self.check_youtube_video_data()
 
-        logger.debug(f"LINE 91:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
         # check comments for any YouTube URLs that haven't already been flagged
         await self.check_comments()
-
-        logger.debug(f"LINE 99:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
 
         return self.rick_rolls, self.redirects
 
@@ -120,23 +99,6 @@ class RickRollDetector:
         for url_obj in list(self.urls):
             url = url_obj.url()
             domain = url_obj.domain()
-
-        # # domain
-        #     logger.debug(f"DOMAIN: {domain}")
-        #     redis = await self.redis.url_get(f"domain::{domain}")
-        #     if redis and isinstance(redis, dict):  # if not cached, will continue on to the next set of checks
-        #         is_rick_roll = redis.get('is_rick_roll')
-        #
-        #         if is_rick_roll is True:  # it's a cached rick roll
-        #
-        #             # this domain is known to redirect all requests to a rick roll
-        #             # slightly different procedure since output needs to include this information
-        #             original_url = redis['extra']
-        #             self.redirects[original_url].add(url)
-        #             self.rick_rolls[original_url] = RickRollData('domain', original_url)
-        #             self.urls.remove(url_obj)  # no longer needs to be checked
-        #
-        #         continue
 
         # url
             logger.debug(f"CHECKING REDIS FOR URL {url}")
@@ -304,11 +266,6 @@ class RickRollDetector:
             url = url_obj.url()
             logger.debug(f"CHECK_YOUTUBE_VIDEO_DATA: {url}")
 
-
-            # PARTIAL READ IS CURRENTLY BROKEN - DO NOT USE
-            # data = await response.content.read(10**6)  # reads up to 1 megabyte
-            # html = data.decode()
-
             parsed_url = urlparse(url)
             video_id = None
 
@@ -325,49 +282,34 @@ class RickRollDetector:
 
             if video_id:
 
-                youtube_api_url = None
-                response = None
-
-                # try:
                 # format the api url to request the video attached to this video_id.
                 youtube_api_url = VIDEO_URL.format(key=authentication.YOUTUBE_API_KEY, id=video_id)
 
                 response = await self.session.get(youtube_api_url)
                 data = await response.json()
-                logger.debug(str(data))
-                logger.debug(str(data.keys()))
-                snippet = data['items'][0]["snippet"]
 
-                if len(list(rickroll_pattern.finditer(snippet["title"].lower()))) > 0:
-                    self.rick_rolls[url] = RickRollData("youtube-api", "video-title")
-                    url_obj.close()
-                    self.urls.remove(url_obj)
+                try:
+                    snippet = data['items'][0]["snippet"]  # if this line throws any errors I'm going to be angry
 
-                elif len(list(rickroll_pattern.finditer(snippet["description"].lower()))) > 0:
-                    self.rick_rolls[url] = RickRollData('youtube-api', 'video-description')
-                    url_obj.close()
-                    self.urls.remove(url_obj)
+                    if len(list(rickroll_pattern.finditer(snippet["title"].lower()))) > 0:
+                        self.rick_rolls[url] = RickRollData("youtube-api", "video-title")
+                        url_obj.close()
+                        self.urls.remove(url_obj)
 
-                else:
-                    # regex detected no rickrolls, don't remove from url list.
-                    pass
+                    elif len(list(rickroll_pattern.finditer(snippet["description"].lower()))) > 0:
+                        self.rick_rolls[url] = RickRollData('youtube-api', 'video-description')
+                        url_obj.close()
+                        self.urls.remove(url_obj)
 
-                # except KeyError as e:
-                #     # error occoured with youtube api request, send to error channel and log it.
-                #     exc = traceback.format_exception(e.__class__, e, e.__traceback__)
-                #     exc = '\n'.join(exc)
-                #     logger.debug(
-                #         f"YOUTUBE API ERROR DETECTED\nWITH URL {url_obj.url(stripped=False)}\nYOUTUBE API URL {youtube_api_url}\nHTTP CODE {response.status if response else None}\nTRACEBACK\n{exc}")
-                #     hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'],
-                #                                     adapter=discord.AsyncWebhookAdapter(self.session))
-                #     try:
-                #         await hook.send(
-                #             f"YOUTUBE API ERROR DETECTED\nWITH URL {url_obj.url(stripped=False)}\nYOUTUBE API URL {youtube_api_url}\nHTTP CODE {response.status if response else None}")
-                #     except discord.DiscordException:
-                #         logger.error("Failed to log error to logging channel.")
+                    else:
+                        # regex detected no rickrolls, don't remove from url list.
+                        pass
 
-            else:
-                logger.debug(f"NO VIDEO ID FOUND FOR {url}")
+                except KeyError:
+                    logger.error(str(data))
+                    if 'error' in data.keys():
+                        raise YoutubeApiError(str(data['error']))
+                    raise
 
     async def check_comments(self):
         """
