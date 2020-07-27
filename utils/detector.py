@@ -63,26 +63,15 @@ class RickRollDetector:
         # returns list of url strings and map of resolved url -> list of original urls
         await self.resolve()
 
-        logger.debug(f"LINE 65:")
+        logger.debug(f"LINE 66:")
         logger.debug(f"URLS: {[url.url() for url in self.urls]}")
         logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
         logger.debug(f"REDIRECTS: {self.redirects}")
 
-        # TODO: EVERYTHING BELOW THIS POINT NEEDS REWRITE
         # check redis again, this time for any new URLs found after redirect
         await self.check_redis_again()
-        #
-        # # check for YouTube URLs
-        # self.filter_youtube()
-        #
-        # # download YouTube pages and check with rick roll regex
-        # await self.check_youtube_html()
-        #
-        # # check comments for any YouTube URLs that haven't already been flagged
-        # await self.check_comments()
-        #
 
-        logger.debug(f"LINE 79:")
+        logger.debug(f"LINE 74:")
         logger.debug(f"URLS: {[url.url() for url in self.urls]}")
         logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
         logger.debug(f"REDIRECTS: {self.redirects}")
@@ -91,7 +80,7 @@ class RickRollDetector:
         # todo: non-youtube URLs should scrape and check for embedded YouTube video
         self.filter_youtube()
 
-        logger.debug(f"LINE 88:")
+        logger.debug(f"LINE 83:")
         logger.debug(f"URLS: {[url.url() for url in self.urls]}")
         logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
         logger.debug(f"REDIRECTS: {self.redirects}")
@@ -99,7 +88,7 @@ class RickRollDetector:
         # download YouTube pages and check with rick roll regex
         await self.check_youtube_video_data()
 
-        logger.debug(f"LINE 96:")
+        logger.debug(f"LINE 91:")
         logger.debug(f"URLS: {[url.url() for url in self.urls]}")
         logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
         logger.debug(f"REDIRECTS: {self.redirects}")
@@ -107,7 +96,7 @@ class RickRollDetector:
         # check comments for any YouTube URLs that haven't already been flagged
         await self.check_comments()
 
-        logger.debug(f"LINE 104:")
+        logger.debug(f"LINE 99:")
         logger.debug(f"URLS: {[url.url() for url in self.urls]}")
         logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
         logger.debug(f"REDIRECTS: {self.redirects}")
@@ -319,6 +308,7 @@ class RickRollDetector:
             # html = data.decode()
 
             parsed_url = urlparse(url)
+            video_id = None
 
             # different methods for different urls.
             if parsed_url.netloc.endswith("youtube.com"):
