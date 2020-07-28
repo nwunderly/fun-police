@@ -327,13 +327,27 @@ class RickRollDetector:
         Pulls video comments using HTTP request to YouTube API.
         """
         url = url if isinstance(url, str) else url.human_repr()
-        url_id = re.sub('youtube.com/watch?v=', '', url)
-        async with self.session.get(
-                f"{self.base_url}part=snippet&videoId={url_id}&textFormat=plainText&maxResults={self.bot.properties.comment_count}&key={authentication.YOUTUBE_API_KEY}") as response:
-            json = await response.json()
-            i = json.get('items')
-            i = i if i else []
-            return [str(item['snippet']) for item in i]
+        parsed_url = urlparse(url)
+        video_id = None
+
+        # different methods for different urls.
+        if get_domain(url).endswith("youtube.com"):
+            v = parse_qs(parsed_url.query)
+            if v:
+                # gets the video's id from the url's queries, specifically the `v` tag.
+                video_id = v.get('v')[0]
+
+        elif parsed_url.netloc == "youtu.be":
+            # returns the last characters of the shorter youtu.be url.
+            video_id = parsed_url.path[1:]
+
+        if video_id:
+            async with self.session.get(
+                    f"{self.base_url}part=snippet&videoId={video_id}&textFormat=plainText&maxResults={self.bot.properties.comment_count}&key={authentication.YOUTUBE_API_KEY}") as response:
+                json = await response.json()
+                i = json.get('items')
+                i = i if i else []
+                return [str(item['snippet']) for item in i]
 
     @staticmethod
     def parse_comments(comments):
