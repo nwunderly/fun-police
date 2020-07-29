@@ -9,7 +9,7 @@ import discord
 from discord.ext import commands
 
 from utils.patterns import *
-from utils.helpers import strip_url
+from utils.helpers import strip_url, get_domain
 from utils.url import QuestionableURL
 from confidential import authentication
 
@@ -23,13 +23,21 @@ VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos?key={key}&part=snippet
 # extra is extra data (specific section for soup, percent of flagged comments, etc)
 
 
+class YoutubeResolveError(Exception):
+    pass
+
+
+class YoutubeApiError(Exception):
+    pass
+
+
 class RickRollDetector:
     """
     Wraps up all methods used for checking a single message for rick rolls.
     """
-    def __init__(self, bot, urls: list):
+    def __init__(self, bot, urls: list, session):
         self.bot = bot
-        self.session = bot.session
+        self.session = session
         self.redis = bot.redis
         self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
 
@@ -51,61 +59,26 @@ class RickRollDetector:
         # remove duplicate URLs
         self.remove_dupes()
 
-        logger.debug(f"LINE 53:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
         # check redis cache
         # redis will have them cached without the http:// part
         await self.check_redis()
 
-        logger.debug(f"LINE 62:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
         # handle redirects
-        # returns list of Response objects and map of resolved url -> list of original urls
+        # returns list of url strings and map of resolved url -> list of original urls
         await self.resolve()
-
-        logger.debug(f"LINE 71:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
 
         # check redis again, this time for any new URLs found after redirect
         await self.check_redis_again()
-
-        logger.debug(f"LINE 79:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
 
         # check for YouTube URLs
         # todo: non-youtube URLs should scrape and check for embedded YouTube video
         self.filter_youtube()
 
-        logger.debug(f"LINE 88:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
         # download YouTube pages and check with rick roll regex
         await self.check_youtube_video_data()
 
-        logger.debug(f"LINE 96:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
-
         # check comments for any YouTube URLs that haven't already been flagged
         await self.check_comments()
-
-        logger.debug(f"LINE 104:")
-        logger.debug(f"URLS: {[url.url() for url in self.urls]}")
-        logger.debug(f"RICK_ROLLS: {self.rick_rolls}")
-        logger.debug(f"REDIRECTS: {self.redirects}")
 
         return self.rick_rolls, self.redirects
 
@@ -126,23 +99,6 @@ class RickRollDetector:
         for url_obj in list(self.urls):
             url = url_obj.url()
             domain = url_obj.domain()
-
-        # # domain
-        #     logger.debug(f"DOMAIN: {domain}")
-        #     redis = await self.redis.url_get(f"domain::{domain}")
-        #     if redis and isinstance(redis, dict):  # if not cached, will continue on to the next set of checks
-        #         is_rick_roll = redis.get('is_rick_roll')
-        #
-        #         if is_rick_roll is True:  # it's a cached rick roll
-        #
-        #             # this domain is known to redirect all requests to a rick roll
-        #             # slightly different procedure since output needs to include this information
-        #             original_url = redis['extra']
-        #             self.redirects[original_url].add(url)
-        #             self.rick_rolls[original_url] = RickRollData('domain', original_url)
-        #             self.urls.remove(url_obj)  # no longer needs to be checked
-        #
-        #         continue
 
         # url
             logger.debug(f"CHECKING REDIS FOR URL {url}")
@@ -193,8 +149,26 @@ class RickRollDetector:
 
     async def resolve(self):
         """
-        Takes list of URL strings and returns list of Response objects with resolved URLs.
+        Takes list of URL strings and returns list of resolved youtube urls.
         """
+
+        async def get(_url, recursions=0):
+
+            domain = get_domain(_url)
+            logger.debug(f"DOMAIN: {domain}")
+            if re.match(r'(?:.*\.)*(?:youtube\.com|youtu\.be)', domain):
+                return _url
+
+            async with self.session.get(_url, allow_redirects=False) as _response:
+                if 300 <= _response.status <= 399:
+                    location = _response.headers.get('Location')
+                    logger.debug(f"URL {_url} redirects to {location}")
+                    if location:
+                        if recursions >= 3:
+                            raise YoutubeResolveError("Too many redirects.")
+                        return await get(location, recursions+1)
+
+                raise YoutubeResolveError("URL does not redirect and is not a YouTube URL.")
 
         for url in list(self.urls):
             if not url:
@@ -210,8 +184,8 @@ class RickRollDetector:
                 if not url.startswith('http'):
                     url = 'http://' + url
 
-                response = await self.session.get(url)
-                url_obj.update(response)
+                youtube_url = await get(url)
+                url_obj.update(youtube_url)
                 resolved_url = url_obj.url()
 
                 if resolved_url in resolved:
@@ -219,31 +193,30 @@ class RickRollDetector:
                     url_obj.close()
                     self.urls.remove(url_obj)
                     if resolved_url != original_url:
-                        logger.debug("LINE 213")
-                        logger.debug(resolved_url)
-                        logger.debug(original_url)
                         self.redirects[resolved_url].add(original_url)
                 else:
                     # same response is held open to be used again for downloading the page
                     if resolved_url != original_url:
-                        logger.debug("LINE 221")
-                        logger.debug(resolved_url)
-                        logger.debug(original_url)
                         self.redirects[resolved_url].add(original_url)
                     resolved.add(resolved_url)
 
-            except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError, aiohttp.ClientConnectionError):
+            except (aiohttp.InvalidURL, aiohttp.ClientConnectorCertificateError, aiohttp.ClientConnectionError, YoutubeResolveError) as e:
+                logger.debug(f"removing URL {url} ({e})")
                 self.urls.remove(url_obj)
+
 
     async def check_redis_again(self):
         """Checks redis for any cached URLs after redirect."""
         for url_obj in list(self.urls):
             url = url_obj.url()
 
+            logger.debug(f"CHECK_REDIS_AGAIN: CHECKING {url}")
+
             redis = await self.redis.url_get(url)
             if not redis or not isinstance(redis, dict):  # not cached, will continue on to the next set of checks
                 continue
             is_rick_roll = redis.get('is_rick_roll')
+            logger.debug(str(is_rick_roll))
 
             if is_rick_roll is True:  # it's a cached rick roll
 
@@ -291,15 +264,13 @@ class RickRollDetector:
 
         for url_obj in list(self.urls):
             url = url_obj.url()
-
-            # PARTIAL READ IS CURRENTLY BROKEN - DO NOT USE
-            # data = await response.content.read(10**6)  # reads up to 1 megabyte
-            # html = data.decode()
+            logger.debug(f"CHECK_YOUTUBE_VIDEO_DATA: {url}")
 
             parsed_url = urlparse(url)
+            video_id = None
 
             # different methods for different urls.
-            if parsed_url.netloc.endswith("youtube.com"):
+            if get_domain(url).endswith("youtube.com"):
                 v = parse_qs(parsed_url.query)
                 if v:
                     # gets the video's id from the url's queries, specifically the `v` tag.
@@ -310,12 +281,15 @@ class RickRollDetector:
                 video_id = parsed_url.path[1:]
 
             if video_id:
-                try:
-                    # format the api url to request the video attached to this video_id.
-                    youtube_api_url = VIDEO_URL.format(key=authentication.YOUTUBE_API_KEY, id=video_id)
 
-                    response = await self.session.get(youtube_api_url)
-                    snippet = response["snippet"]
+                # format the api url to request the video attached to this video_id.
+                youtube_api_url = VIDEO_URL.format(key=authentication.YOUTUBE_API_KEY, id=video_id)
+
+                response = await self.session.get(youtube_api_url)
+                data = await response.json()
+
+                try:
+                    snippet = data['items'][0]["snippet"]  # if this line throws any errors I'm going to be angry
 
                     if len(list(rickroll_pattern.finditer(snippet["title"].lower()))) > 0:
                         self.rick_rolls[url] = RickRollData("youtube-api", "video-title")
@@ -331,19 +305,11 @@ class RickRollDetector:
                         # regex detected no rickrolls, don't remove from url list.
                         pass
 
-                except KeyError as e:
-                    # error occoured with youtube api request, send to error channel and log it.
-                    exc = traceback.format_exception(e.__class__, e, e.__traceback__)
-                    exc = '\n'.join(exc)
-                    logger.debug(
-                        f"YOUTUBE API ERROR DETECTED\nWITH URL {url_obj.url(stripped=False)}\nYOUTUBE API URL {youtube_api_url}\nHTTP CODE {url_obj.response.status}\nTRACEBACK\n{exc}")
-                    hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'],
-                                                    adapter=discord.AsyncWebhookAdapter(self.session))
-                    try:
-                        await hook.send(
-                            f"YOUTUBE API ERROR DETECTED\nWITH URL {url_obj.url(stripped=False)}\nHTTP CODE {url_obj.response.status}\n")
-                    except discord.DiscordException:
-                        logger.error("Failed to log error to logging channel.")
+                except KeyError:
+                    logger.error(str(data))
+                    if 'error' in data.keys():
+                        raise YoutubeApiError(str(data['error']))
+                    raise
 
     async def check_comments(self):
         """
@@ -361,13 +327,27 @@ class RickRollDetector:
         Pulls video comments using HTTP request to YouTube API.
         """
         url = url if isinstance(url, str) else url.human_repr()
-        url_id = re.sub('youtube.com/watch?v=', '', url)
-        async with self.session.get(
-                f"{self.base_url}part=snippet&videoId={url_id}&textFormat=plainText&maxResults={self.bot.properties.comment_count}&key={authentication.YOUTUBE_API_KEY}") as response:
-            json = await response.json()
-            i = json.get('items')
-            i = i if i else []
-            return [str(item['snippet']) for item in i]
+        parsed_url = urlparse(url)
+        video_id = None
+
+        # different methods for different urls.
+        if get_domain(url).endswith("youtube.com"):
+            v = parse_qs(parsed_url.query)
+            if v:
+                # gets the video's id from the url's queries, specifically the `v` tag.
+                video_id = v.get('v')[0]
+
+        elif parsed_url.netloc == "youtu.be":
+            # returns the last characters of the shorter youtu.be url.
+            video_id = parsed_url.path[1:]
+
+        if video_id:
+            async with self.session.get(
+                    f"{self.base_url}part=snippet&videoId={video_id}&textFormat=plainText&maxResults={self.bot.properties.comment_count}&key={authentication.YOUTUBE_API_KEY}") as response:
+                json = await response.json()
+                i = json.get('items')
+                i = i if i else []
+                return [str(item['snippet']) for item in i]
 
     @staticmethod
     def parse_comments(comments):

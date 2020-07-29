@@ -4,6 +4,7 @@ from discord.ext import commands
 import datetime
 import psutil
 import random
+import aiohttp
 
 from utils.detector import RickRollDetector
 from confidential import authentication
@@ -77,8 +78,9 @@ class Users(commands.Cog):
     async def check(self, ctx, *urls):
         """Scans a URL and returns a detailed report of the results."""
         await ctx.send("Checking URL...")
-        detector = RickRollDetector(self.bot, list(urls))
-        result = await detector.find_rick_rolls()
+        async with aiohttp.ClientSession() as session:
+            detector = RickRollDetector(self.bot, list(urls), session)
+            result = await detector.find_rick_rolls()
         await ctx.send(result)
 
     @commands.command()

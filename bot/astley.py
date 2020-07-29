@@ -58,7 +58,7 @@ class Astley(commands.AutoShardedBot):
         logger.debug(f"Command '{ctx.command.qualified_name}' invoked by user {ctx.author.id} in channel {ctx.channel.id}, guild {ctx.guild.id}.")
 
     def sd_notify(self, text):
-        logger.debug(f"Sending sd_notify: {text}")
+        # logger.debug(f"Sending sd_notify: {text}")
         self._sd_notifier.notify(text)
 
     def sd_ready(self):
