@@ -159,16 +159,16 @@ class RickRollDetector:
             if re.match(r'(?:.*\.)*(?:youtube\.com|youtu\.be)', domain):
                 return _url
 
-            _response = await self.session.get(_url, allow_redirects=False)
-            if 300 <= _response.status <= 399:
-                location = _response.headers.get('Location')
-                logger.debug(f"URL {_url} redirects to {location}")
-                if location:
-                    if recursions >= 3:
-                        raise YoutubeResolveError("Too many redirects.")
-                    return await get(location, recursions+1)
+            async with self.session.get(_url, allow_redirects=False) as _response:
+                if 300 <= _response.status <= 399:
+                    location = _response.headers.get('Location')
+                    logger.debug(f"URL {_url} redirects to {location}")
+                    if location:
+                        if recursions >= 3:
+                            raise YoutubeResolveError("Too many redirects.")
+                        return await get(location, recursions+1)
 
-            raise YoutubeResolveError("URL does not redirect and is not a YouTube URL.")
+                raise YoutubeResolveError("URL does not redirect and is not a YouTube URL.")
 
         for url in list(self.urls):
             if not url:
