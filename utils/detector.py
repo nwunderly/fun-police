@@ -305,11 +305,11 @@ class RickRollDetector:
                         # regex detected no rickrolls, don't remove from url list.
                         pass
 
-                except KeyError:
+                except (KeyError, IndexError) as e:
                     logger.error(str(data))
                     if 'error' in data.keys():
                         raise YoutubeApiError(str(data['error']))
-                    raise
+                    raise YoutubeApiError(f"[{e.__class__}] {e}")
 
     async def check_comments(self):
         """
