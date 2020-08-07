@@ -71,9 +71,11 @@ def strip_url(url):
     if parsed.netloc == 'www.youtube.com' or parsed.netloc == 'youtube.com':
         v = parse_qs(parsed.query)
         if v:
-            v = v.get('v')[0]
+            v = v.get('v')
             if v:
-                return f"youtube.com/watch?v={v}"
+                v = v[0]
+                if v:
+                    return f"youtube.com/watch?v={v}"
 
     # youtu.be -> youtube so it doesn't have to be resolved
     elif parsed.netloc == 'youtu.be':
