@@ -72,5 +72,10 @@ class Stats(commands.Cog):
             self.stats = DailyStats()
 
 
+def setup(bot):
+    bot.add_cog(Stats(bot))
+
+
+
 
 

@@ -3,7 +3,7 @@ prefix = '!!'
 
 version = '1.5.0'
 
-cogs = ['cogs.testing', 'cogs.admin', 'cogs.users']
+cogs = ['cogs.testing', 'cogs.admin', 'cogs.users', 'cogs.stats']
 
 activities = [
     'playing no fun allowed',
