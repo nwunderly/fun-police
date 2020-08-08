@@ -118,6 +118,11 @@ class Rick(Astley):
         :return: list of dicts, each with "is_rick_roll" and "extra" fields.
         """
         logger.debug(f"Checking message {message.id}.")
+
+        stats = self.get_cog('Stats')
+        if stats:
+            stats.stats.messages_seen += 1
+
         urls = self.get_urls(message.content)
         
         if not urls:
@@ -126,6 +131,10 @@ class Rick(Astley):
         async with aiohttp.ClientSession() as session:
             detector = RickRollDetector(self, urls, session)
             rick_rolls, redirects = await detector.find_rick_rolls()
+
+        stats = self.get_cog('Stats')
+        if stats:
+            stats.stats.rickrolls_detected += len(rick_rolls)
 
         if not rick_rolls:
             return

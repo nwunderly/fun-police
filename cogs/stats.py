@@ -16,7 +16,6 @@ class DailyStats:
         self.messages_seen = 0
         self.urls_seen = 0
         self.youtube_urls_seen = 0
-        self.youtube_urls_after_redirect = 0
         self.youtube_data_requests = 0
         self.youtube_comment_requests = 0
         self.rickrolls_detected = 0
@@ -28,7 +27,6 @@ class DailyStats:
             self.messages_seen,
             self.urls_seen,
             self.youtube_urls_seen,
-            self.youtube_urls_after_redirect,
             self.youtube_data_requests,
             self.youtube_comment_requests,
             self.rickrolls_detected
@@ -45,7 +43,6 @@ class DailyStats:
             e.add_field(name="messages_seen", value=str(self.messages_seen))
             e.add_field(name="urls_seen", value=str(self.urls_seen))
             e.add_field(name="youtube_urls_seen", value=str(self.youtube_urls_seen))
-            e.add_field(name="youtube_urls_after_redirect", value=str(self.youtube_urls_after_redirect))
             e.add_field(name="youtube_data_requests", value=str(self.youtube_data_requests))
             e.add_field(name="youtube_comment_requests", value=str(self.youtube_comment_requests))
             e.add_field(name="rickrolls_detected", value=str(self.rickrolls_detected))
