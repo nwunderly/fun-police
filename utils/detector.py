@@ -59,9 +59,7 @@ class RickRollDetector:
         # remove duplicate URLs
         self.remove_dupes()
 
-        stats = self.bot.get_cog('Stats')
-        if stats:
-            stats.stats.urls_seen += len(self.urls)
+        self.bot.stats.urls_seen += len(self.urls)
 
         # check redis cache
         # redis will have them cached without the http:// part
@@ -78,9 +76,7 @@ class RickRollDetector:
         # todo: non-youtube URLs should scrape and check for embedded YouTube video
         self.filter_youtube()
 
-        stats = self.bot.get_cog('Stats')
-        if stats:
-            stats.stats.youtube_urls_seen += len(self.urls)
+        self.bot.stats.youtube_urls_seen += len(self.urls)
 
         # download YouTube pages and check with rick roll regex
         await self.check_youtube_video_data()
@@ -289,9 +285,7 @@ class RickRollDetector:
                 video_id = parsed_url.path[1:]
 
             if video_id:
-                stats = self.bot.get_cog('Stats')
-                if stats:
-                    stats.stats.youtube_data_requests += 1
+                self.bot.stats.youtube_data_requests += 1
 
                 # format the api url to request the video attached to this video_id.
                 youtube_api_url = VIDEO_URL.format(key=authentication.YOUTUBE_API_KEY, id=video_id)
@@ -353,9 +347,7 @@ class RickRollDetector:
             video_id = parsed_url.path[1:]
 
         if video_id:
-            stats = self.bot.get_cog('Stats')
-            if stats:
-                stats.stats.youtube_comment_requests += 1
+            self.bot.stats.youtube_comment_requests += 1
 
             async with self.session.get(
                     f"{self.base_url}part=snippet&videoId={video_id}&textFormat=plainText&maxResults={self.bot.properties.comment_count}&key={authentication.YOUTUBE_API_KEY}") as response:

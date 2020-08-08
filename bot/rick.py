@@ -29,6 +29,7 @@ class Rick(Astley):
         self.yt_pattern = yt_pattern
         self.rickroll_pattern = rickroll_pattern
         self.comment_pattern = comment_pattern
+        self.stats = None
 
     async def on_message(self, message):
         if not message.guild:
@@ -119,9 +120,10 @@ class Rick(Astley):
         """
         logger.debug(f"Checking message {message.id}.")
 
-        stats = self.get_cog('Stats')
-        if stats:
-            stats.stats.messages_seen += 1
+        if not self.stats:
+            raise Exception("STATS NOT LOADED")
+
+        self.stats.messages_seen += 1
 
         urls = self.get_urls(message.content)
         
@@ -132,9 +134,7 @@ class Rick(Astley):
             detector = RickRollDetector(self, urls, session)
             rick_rolls, redirects = await detector.find_rick_rolls()
 
-        stats = self.get_cog('Stats')
-        if stats:
-            stats.stats.rickrolls_detected += len(rick_rolls)
+        self.stats.rickrolls_detected += len(rick_rolls)
 
         if not rick_rolls:
             return

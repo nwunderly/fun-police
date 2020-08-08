@@ -54,22 +54,21 @@ class Stats(commands.Cog):
     Tracks stats for Fun Police.
     """
     def __init__(self, bot):
+        self.bot = bot
         self.today = datetime.date.today()
-        self.stats = DailyStats()
+        self.bot.stats = DailyStats()
         self.check_if_tomorrow.start()
 
     def cog_unload(self):
         self.check_if_tomorrow.cancel()
 
-    def get_stats(self):
-        return self.stats
-
     @tasks.loop(minutes=1)
     async def check_if_tomorrow(self):
         if self.today != datetime.date.today():
-            self.stats.dump()
-            await self.stats.send()
-            self.stats = DailyStats()
+            self.today = datetime.date.today()
+            self.bot.stats.dump()
+            await self.bot.stats.send()
+            self.bot.stats = DailyStats()
 
 
 def setup(bot):
