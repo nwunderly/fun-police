@@ -29,6 +29,7 @@ class Rick(Astley):
         self.yt_pattern = yt_pattern
         self.rickroll_pattern = rickroll_pattern
         self.comment_pattern = comment_pattern
+        self.stats = None
 
     async def on_message(self, message):
         if not message.guild:
@@ -118,6 +119,12 @@ class Rick(Astley):
         :return: list of dicts, each with "is_rick_roll" and "extra" fields.
         """
         logger.debug(f"Checking message {message.id}.")
+
+        if not self.stats:
+            raise Exception("STATS NOT LOADED")
+
+        self.stats.messages_seen += 1
+
         urls = self.get_urls(message.content)
         
         if not urls:
@@ -126,6 +133,8 @@ class Rick(Astley):
         async with aiohttp.ClientSession() as session:
             detector = RickRollDetector(self, urls, session)
             rick_rolls, redirects = await detector.find_rick_rolls()
+
+        self.stats.rickrolls_detected += len(rick_rolls)
 
         if not rick_rolls:
             return

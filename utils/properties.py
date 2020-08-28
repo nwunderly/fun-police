@@ -1,9 +1,9 @@
 
 prefix = '!!'
 
-version = '1.4.7'
+version = '1.5.1'
 
-cogs = ['cogs.testing', 'cogs.admin', 'cogs.users']
+cogs = ['cogs.testing', 'cogs.admin', 'cogs.users', 'cogs.stats']
 
 activities = [
     'playing no fun allowed',
