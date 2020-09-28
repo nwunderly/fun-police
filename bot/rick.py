@@ -30,6 +30,7 @@ class Rick(Astley):
         self.rickroll_pattern = rickroll_pattern
         self.comment_pattern = comment_pattern
         self.stats = None
+        self.ignored_guilds = [264445053596991498, 110373943822540800]
 
     async def on_message(self, message):
         if not message.guild:
@@ -37,6 +38,8 @@ class Rick(Astley):
         if message.author == self.user or message.author.id in [687454860907511881, 715258929155932273]:
             return
         await self.process_commands(message)
+        if message.guild.id in self.ignored_guilds:
+            return
         if not message.content.lower().startswith(f'{self.command_prefix}check') \
                 and not message.content.lower().startswith(f'{self.command_prefix}report') \
                 and not message.content.lower().startswith(f'{self.command_prefix}remove'):
@@ -54,6 +57,8 @@ class Rick(Astley):
 
     async def on_message_edit(self, before, after):
         if before.content == after.content:
+            return
+        if message.guild.id in self.ignored_guilds:
             return
         message = after
         try:
