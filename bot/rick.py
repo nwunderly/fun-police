@@ -58,11 +58,10 @@ class Rick(Astley):
     async def on_message_edit(self, before, after):
         if before.content == after.content:
             return
-        if message.guild.id in self.ignored_guilds:
+        if after.guild.id in self.ignored_guilds:
             return
-        message = after
         try:
-            await self.process_rick_rolls(message)
+            await self.process_rick_rolls(after)
         except Exception as e:
             exc = traceback.format_exception(e.__class__, e, e.__traceback__)
             exc = '\n'.join(exc)
