@@ -26,6 +26,7 @@ class Astley(commands.AutoShardedBot):
     """
     def __init__(self, *args, **kwargs):
         kwargs['command_prefix'] = properties.prefix
+        kwargs['intents'] = discord.Intents(guild_messages=True, guilds=True)
         super().__init__(*args, **kwargs)
         self.loggers = dict()
         self._exit_code = 0

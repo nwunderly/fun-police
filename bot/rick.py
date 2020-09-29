@@ -1,9 +1,6 @@
 import aiohttp
 import logging
-import yaml
 import traceback
-from bs4 import BeautifulSoup
-from collections import defaultdict, namedtuple
 
 import discord
 from discord.ext import commands
