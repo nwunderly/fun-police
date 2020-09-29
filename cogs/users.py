@@ -1,10 +1,11 @@
 import discord
-from discord.ext import commands
-
+import sys
 import datetime
 import psutil
 import random
 import aiohttp
+
+from discord.ext import commands
 
 from utils.detector import RickRollDetector
 from confidential import authentication
@@ -37,6 +38,7 @@ class Users(commands.Cog):
         embed.set_author(name=str(self.bot.user), icon_url=self.bot.user.avatar_url)
         embed.add_field(name="Version", value=self.bot.properties.version)
         embed.add_field(name="Library", value='discord.py')
+        embed.add_field(name="OS", value='Ubuntu' if sys.platform == 'linux' else 'Windows')
 
         dt = datetime.datetime.now()-self.bot.started_at
         if dt.days >= 7:
@@ -54,13 +56,13 @@ class Users(commands.Cog):
         memory = int(psutil.Process().memory_info().rss//10**6)
         embed.add_field(name="Memory", value=f"{memory} MB")
         embed.add_field(name="Servers", value=str(len(self.bot.guilds)))
-        embed.add_field(name="Users", value=str(len(self.bot.users)))
+        # embed.add_field(name="Users", value=str(len(self.bot.users)))
 
         embed.add_field(name="Source", value=f'[github]({self.bot.properties.github_url})')
         embed.add_field(name="Add me!", value=f'[invite]({self.bot.properties.bot_url})')
         embed.add_field(name="Support server", value=f'[join]({self.bot.properties.server_url})')
 
-        embed.set_footer(text=f'created by {" and ".join(str(self.bot.get_user(owner)) for owner in self.bot.properties.owner_ids)}')
+        embed.set_footer(text=f'created by nwunder#5176 and No Jons#1299')
         embed.timestamp = self.bot.user.created_at
         await ctx.send(embed=embed)
 
