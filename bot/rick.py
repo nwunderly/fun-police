@@ -55,7 +55,8 @@ class Rick(Astley):
     async def on_message_edit(self, before, after):
         if before.content == after.content:
             return
-        if after.guild.id in self.ignored_guilds:
+        message = after
+        if message.guild.id in self.ignored_guilds:
             return
         try:
             await self.process_rick_rolls(after)
