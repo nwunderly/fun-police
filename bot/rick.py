@@ -45,7 +45,7 @@ class Rick(Astley):
             except Exception as e:
                 exc = traceback.format_exception(e.__class__, e, e.__traceback__)
                 exc = '\n'.join(exc)
-                logger.error(f"Exception occurred in on_message {message.jump_url}>\n{exc}")
+                logger.error(f"Exception occurred in on_message {message.jump_url}\n{exc}")
                 hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
                 try:
                     await hook.send(f"Exception occurred in [on_message](<{message.jump_url}>):```py\n{exc[:1850]}\n```")
@@ -63,7 +63,7 @@ class Rick(Astley):
         except Exception as e:
             exc = traceback.format_exception(e.__class__, e, e.__traceback__)
             exc = '\n'.join(exc)
-            logger.error(f"Exception occurred in on_message_edit {message.jump_url}>\n{exc}")
+            logger.error(f"Exception occurred in on_message_edit {message.jump_url}\n{exc}")
             hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
             try:
                 await hook.send(f"Exception occurred in [on_message_edit](<{message.jump_url}>):```py\n{exc[:1850]}\n```")

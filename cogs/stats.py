@@ -23,17 +23,17 @@ class DailyStats:
     def dump(self):
         if self.dumped:
             raise Exception(f"({self.day}) ALREADY DUMPED.")
-        data = str((
+        data = (
             self.messages_seen,
             self.urls_seen,
             self.youtube_urls_seen,
             self.youtube_data_requests,
             self.youtube_comment_requests,
             self.rickrolls_detected
-        ))
+        )
         with open('/home/rick/daily_stats.csv', 'a') as f:
             f.write("\n")
-            f.write(','.join(data))
+            f.write(','.join([str(i) for i in data]))
         self.dumped = True
 
     async def send(self):
