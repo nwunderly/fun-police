@@ -294,7 +294,15 @@ class RickRollDetector:
                 data = await response.json()
 
                 try:
-                    snippet = data['items'][0]["snippet"]  # if this line throws any errors I'm going to be angry
+                    items = data['items']
+                    
+                    if not items:
+                        # this happens a lot. still unsure why. YouTube sends us a valid response with an empty "items" field
+                        # on further investigation this happens for valid youtube videos. Unsure what causes the API to do this.
+                        logger.error(f"YouTube returned empty 'items' field for URL {url} ({response.status}):\n{data}")
+                        continue
+                        
+                    snippet = items[0]["snippet"]  # if this line throws any errors I'm going to be angry
 
                     if len(list(rickroll_pattern.finditer(snippet["title"].lower()))) > 0:
                         self.rick_rolls[url] = RickRollData("youtube-api", "video-title")
@@ -311,10 +319,12 @@ class RickRollDetector:
                         pass
 
                 except (KeyError, IndexError) as e:
+                    logger.error(f"{e.__class__.__name__}: {e}")
+                    logger.error(f"{url} ({response.status})")
                     logger.error(str(data))
                     if 'error' in data.keys():
                         raise YoutubeApiError(str(data['error']))
-                    raise YoutubeApiError(f"[{e.__class__}] {e}")
+                    raise YoutubeApiError(f"[{e.__class__.__name__}] {e}")
 
     async def check_comments(self):
         """
