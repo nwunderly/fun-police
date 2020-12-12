@@ -15,17 +15,17 @@ class Users(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(aliases=['join'])
     async def invite(self, ctx):
         """Add me to your server!"""
         await ctx.send(f"**You can invite me here: <{self.bot.properties.bot_url}>**")
 
-    @commands.command()
+    @commands.command(aliases=['server'])
     async def support(self, ctx):
         """Join the support server!"""
         await ctx.send(f"**Support server invite: <{self.bot.properties.server_url}>**")
 
-    @commands.command()
+    @commands.command(aliases=['src'])
     async def source(self, ctx):
         """My public github repository!"""
         await ctx.send(f"**My source code: <{self.bot.properties.github_url}>**")
@@ -90,8 +90,7 @@ class Users(commands.Cog):
         lists = "Please consider voting if you like our bot!\n" \
                 "<https://top.gg/bot/687454860907511881>\n"\
                 "<https://discord.bots.gg/bots/687454860907511881>\n"\
-                "<https://discordbotlist.com/bots/fun-police>\n"\
-                "<https://bots.ondiscord.xyz/bots/687454860907511881>"
+                "<https://discordbotlist.com/bots/fun-police>\n"
         await ctx.send(lists)
 
 
