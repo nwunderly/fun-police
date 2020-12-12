@@ -1,11 +1,7 @@
-
-import sys
 import logging
 from argparse import ArgumentParser
-
 from discord.ext import commands
 
-# custom imports
 from utils.helpers import setup_logger
 from bot.rick import Rick
 

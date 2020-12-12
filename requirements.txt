@@ -1,0 +1,9 @@
+discord.py
+jishaku
+dblpy
+redis
+aredis
+psutil
+PyYAML
+yarl
+aiohttp>=3.6.0,<3.8.0

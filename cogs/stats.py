@@ -31,7 +31,7 @@ class DailyStats:
             self.youtube_comment_requests,
             self.rickrolls_detected
         )
-        with open('/home/rick/daily_stats.csv', 'a') as f:
+        with open('daily_stats.csv', 'a') as f:
             f.write("\n")
             f.write(','.join([str(i) for i in data]))
         self.dumped = True

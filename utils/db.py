@@ -1,9 +1,4 @@
-
-import boto3
-import aioboto3
-import redis
 import aredis
-
 import datetime
 import logging
 
