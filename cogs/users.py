@@ -8,7 +8,7 @@ import aiohttp
 from discord.ext import commands
 
 from utils.detector import RickRollDetector
-from confidential import authentication
+import auth
 
 
 class Users(commands.Cog):
@@ -69,7 +69,7 @@ class Users(commands.Cog):
     @commands.command()
     async def report(self, ctx, url, is_rick_roll: bool):
         """Report a rickroll that the bot failed to detect, or a normal URL that the bot thought was a rickroll."""
-        hook = discord.Webhook.from_url(authentication.WEBHOOKS['reports'], adapter=discord.AsyncWebhookAdapter(self.bot.session))
+        hook = discord.Webhook.from_url(auth.WEBHOOKS['reports'], adapter=discord.AsyncWebhookAdapter(self.bot.session))
         await hook.send(f"⚠ **New report:**\n"
                         f"User: {ctx.author} (`{ctx.author.id}`)\n"
                         f"URL: `{url}`\n"

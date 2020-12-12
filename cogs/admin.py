@@ -1,11 +1,10 @@
-import discord
 from discord.ext import commands
 
 import traceback
 import logging
 import dbl
 
-from confidential.authentication import YOUTUBE_API_KEY, DBL_TOKEN
+from auth import YOUTUBE_API_KEY, DBL_TOKEN
 
 
 logger = logging.getLogger('cogs.admin')

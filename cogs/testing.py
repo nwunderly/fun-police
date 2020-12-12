@@ -1,15 +1,12 @@
 
 import aiohttp
 import re
-import time
-import traceback
 import logging
 import copy
 # import boto3
 
-import discord
 from discord.ext import commands
-from confidential.authentication import YOUTUBE_API_KEY
+from auth import YOUTUBE_API_KEY
 
 logger = logging.getLogger('cogs.testing')
 

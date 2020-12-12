@@ -5,7 +5,7 @@ import aiohttp
 from discord.ext import commands
 from discord.ext import tasks
 
-from confidential.authentication import WEBHOOKS
+from auth import WEBHOOKS
 
 
 class DailyStats:

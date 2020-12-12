@@ -15,7 +15,7 @@ import sys
 # custom imports
 from utils.db import AsyncRedis
 from utils import properties
-from confidential import authentication
+import auth
 
 logger = logging.getLogger('bot.astley')
 
@@ -103,8 +103,8 @@ class Astley(commands.AutoShardedBot):
     def run(self, bot, token=None, *args, **kwargs):
         logger.debug("Run method called.")
         token = token if token else (
-            authentication.DISCORD_TOKEN if bot == 'main'
-            else authentication.DISCORD_DEV_BOT_TOKEN)
+            auth.DISCORD_TOKEN if bot == 'main'
+            else auth.DISCORD_DEV_BOT_TOKEN)
         super().run(token, *args, **kwargs)
 
     async def start(self, *args, **kwargs):
@@ -130,7 +130,7 @@ class Astley(commands.AutoShardedBot):
     async def on_error(self, event_method, *args, **kwargs):
         exc = traceback.format_exc()
         logger.error(f"Ignoring exception in {event_method}:\n{exc}")
-        hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+        hook = discord.Webhook.from_url(auth.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
         try:
             await hook.send(f"Exception occurred in {event_method}: ```py\n{exc[:1850]}\n```")
         except discord.DiscordException:
@@ -142,7 +142,7 @@ class Astley(commands.AutoShardedBot):
         logger.error(f'Ignoring exception in command {context.command}:\n{exc}')
         if not context.command or isinstance(exception, commands.UserInputError):
             return
-        hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+        hook = discord.Webhook.from_url(auth.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
         try:
             await hook.send(f"Exception occurred in command {context.command}: ```py\n{exc[:1850]}\n```")
         except discord.DiscordException:

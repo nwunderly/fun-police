@@ -1,18 +1,12 @@
 import aiohttp
 import logging
-import traceback
-from bs4 import BeautifulSoup
 from collections import defaultdict, namedtuple
 from urllib.parse import urlparse, parse_qs
 
-import discord
-from discord.ext import commands
-
+import auth
 from utils.patterns import *
 from utils.helpers import strip_url, get_domain
 from utils.url import QuestionableURL
-from confidential import authentication
-
 
 logger = logging.getLogger('utils.detector')
 
@@ -288,7 +282,7 @@ class RickRollDetector:
                 self.bot.stats.youtube_data_requests += 1
 
                 # format the api url to request the video attached to this video_id.
-                youtube_api_url = VIDEO_URL.format(key=authentication.YOUTUBE_API_KEY, id=video_id)
+                youtube_api_url = VIDEO_URL.format(key=auth.YOUTUBE_API_KEY, id=video_id)
 
                 response = await self.session.get(youtube_api_url)
                 data = await response.json()
@@ -360,7 +354,7 @@ class RickRollDetector:
             self.bot.stats.youtube_comment_requests += 1
 
             async with self.session.get(
-                    f"{self.base_url}part=snippet&videoId={video_id}&textFormat=plainText&maxResults={self.bot.properties.comment_count}&key={authentication.YOUTUBE_API_KEY}") as response:
+                    f"{self.base_url}part=snippet&videoId={video_id}&textFormat=plainText&maxResults={self.bot.properties.comment_count}&key={auth.YOUTUBE_API_KEY}") as response:
                 json = await response.json()
                 i = json.get('items')
                 i = i if i else []
