@@ -5,7 +5,6 @@ from discord.ext import tasks
 import signal
 import asyncio
 import datetime
-import sdnotify
 import logging
 import traceback
 import aiohttp
@@ -30,7 +29,6 @@ class Astley(commands.AutoShardedBot):
         super().__init__(*args, **kwargs)
         self.loggers = dict()
         self._exit_code = 0
-        self._sd_notifier = sdnotify.SystemdNotifier()
         self.started_at = datetime.datetime.now()
         self.redis = AsyncRedis()
         self.properties = properties
@@ -48,27 +46,12 @@ class Astley(commands.AutoShardedBot):
         Override this to override discord.Client on_ready.
         """
         logger.info('Logged in as {0.user}.'.format(self))
-        if sys.platform == 'linux':
-            logger.debug('Starting watchdog loop.')
-            self.sd_ready()
-            self.sd_watchdog.start()
         self.update_presence.start()
         logger.info('Bot is ready.')
 
     async def on_command_completion(self, ctx):
         logger.debug(f"Command '{ctx.command.qualified_name}' invoked by user {ctx.author.id} in channel {ctx.channel.id}, guild {ctx.guild.id}.")
 
-    def sd_notify(self, text):
-        # logger.debug(f"Sending sd_notify: {text}")
-        self._sd_notifier.notify(text)
-
-    def sd_ready(self):
-        self.sd_notify("READY=1")
-        self.sd_notify("WATCHDOG=1")
-
-    @tasks.loop(seconds=1)
-    async def sd_watchdog(self):
-        self.sd_notify("WATCHDOG=1")
 
     @tasks.loop(minutes=20)
     async def update_presence(self):
