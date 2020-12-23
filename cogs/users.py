@@ -8,24 +8,24 @@ import aiohttp
 from discord.ext import commands
 
 from utils.detector import RickRollDetector
-from confidential import authentication
+import auth
 
 
 class Users(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(aliases=['join'])
     async def invite(self, ctx):
         """Add me to your server!"""
         await ctx.send(f"**You can invite me here: <{self.bot.properties.bot_url}>**")
 
-    @commands.command()
+    @commands.command(aliases=['server'])
     async def support(self, ctx):
         """Join the support server!"""
         await ctx.send(f"**Support server invite: <{self.bot.properties.server_url}>**")
 
-    @commands.command()
+    @commands.command(aliases=['src'])
     async def source(self, ctx):
         """My public github repository!"""
         await ctx.send(f"**My source code: <{self.bot.properties.github_url}>**")
@@ -69,7 +69,7 @@ class Users(commands.Cog):
     @commands.command()
     async def report(self, ctx, url, is_rick_roll: bool):
         """Report a rickroll that the bot failed to detect, or a normal URL that the bot thought was a rickroll."""
-        hook = discord.Webhook.from_url(authentication.WEBHOOKS['reports'], adapter=discord.AsyncWebhookAdapter(self.bot.session))
+        hook = discord.Webhook.from_url(auth.WEBHOOKS['reports'], adapter=discord.AsyncWebhookAdapter(self.bot.session))
         await hook.send(f"⚠ **New report:**\n"
                         f"User: {ctx.author} (`{ctx.author.id}`)\n"
                         f"URL: `{url}`\n"
@@ -90,8 +90,7 @@ class Users(commands.Cog):
         lists = "Please consider voting if you like our bot!\n" \
                 "<https://top.gg/bot/687454860907511881>\n"\
                 "<https://discord.bots.gg/bots/687454860907511881>\n"\
-                "<https://discordbotlist.com/bots/fun-police>\n"\
-                "<https://bots.ondiscord.xyz/bots/687454860907511881>"
+                "<https://discordbotlist.com/bots/fun-police>\n"
         await ctx.send(lists)
 
 

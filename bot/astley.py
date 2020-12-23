@@ -5,7 +5,6 @@ from discord.ext import tasks
 import signal
 import asyncio
 import datetime
-import sdnotify
 import logging
 import traceback
 import aiohttp
@@ -15,7 +14,7 @@ import sys
 # custom imports
 from utils.db import AsyncRedis
 from utils import properties
-from confidential import authentication
+import auth
 
 logger = logging.getLogger('bot.astley')
 
@@ -30,7 +29,6 @@ class Astley(commands.AutoShardedBot):
         super().__init__(*args, **kwargs)
         self.loggers = dict()
         self._exit_code = 0
-        self._sd_notifier = sdnotify.SystemdNotifier()
         self.started_at = datetime.datetime.now()
         self.redis = AsyncRedis()
         self.properties = properties
@@ -48,27 +46,12 @@ class Astley(commands.AutoShardedBot):
         Override this to override discord.Client on_ready.
         """
         logger.info('Logged in as {0.user}.'.format(self))
-        if sys.platform == 'linux':
-            logger.debug('Starting watchdog loop.')
-            self.sd_ready()
-            self.sd_watchdog.start()
         self.update_presence.start()
         logger.info('Bot is ready.')
 
     async def on_command_completion(self, ctx):
         logger.debug(f"Command '{ctx.command.qualified_name}' invoked by user {ctx.author.id} in channel {ctx.channel.id}, guild {ctx.guild.id}.")
 
-    def sd_notify(self, text):
-        # logger.debug(f"Sending sd_notify: {text}")
-        self._sd_notifier.notify(text)
-
-    def sd_ready(self):
-        self.sd_notify("READY=1")
-        self.sd_notify("WATCHDOG=1")
-
-    @tasks.loop(seconds=1)
-    async def sd_watchdog(self):
-        self.sd_notify("WATCHDOG=1")
 
     @tasks.loop(minutes=20)
     async def update_presence(self):
@@ -103,8 +86,8 @@ class Astley(commands.AutoShardedBot):
     def run(self, bot, token=None, *args, **kwargs):
         logger.debug("Run method called.")
         token = token if token else (
-            authentication.DISCORD_TOKEN if bot == 'main'
-            else authentication.DISCORD_DEV_BOT_TOKEN)
+            auth.DISCORD_TOKEN if bot == 'main'
+            else auth.DISCORD_DEV_BOT_TOKEN)
         super().run(token, *args, **kwargs)
 
     async def start(self, *args, **kwargs):
@@ -130,7 +113,7 @@ class Astley(commands.AutoShardedBot):
     async def on_error(self, event_method, *args, **kwargs):
         exc = traceback.format_exc()
         logger.error(f"Ignoring exception in {event_method}:\n{exc}")
-        hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+        hook = discord.Webhook.from_url(auth.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
         try:
             await hook.send(f"Exception occurred in {event_method}: ```py\n{exc[:1850]}\n```")
         except discord.DiscordException:
@@ -142,7 +125,7 @@ class Astley(commands.AutoShardedBot):
         logger.error(f'Ignoring exception in command {context.command}:\n{exc}')
         if not context.command or isinstance(exception, commands.UserInputError):
             return
-        hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+        hook = discord.Webhook.from_url(auth.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
         try:
             await hook.send(f"Exception occurred in command {context.command}: ```py\n{exc[:1850]}\n```")
         except discord.DiscordException:

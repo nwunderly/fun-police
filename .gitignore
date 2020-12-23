@@ -125,7 +125,5 @@ dmypy.json
 .pyre/
 
 # added by me
-/src/confidential/
-/confidential/
-/.idea
-.idea
+auth.py
+.idea/

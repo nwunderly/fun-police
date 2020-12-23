@@ -9,8 +9,7 @@ from discord.ext import commands
 from bot.astley import Astley
 from utils.patterns import *
 from utils.detector import RickRollDetector
-from confidential import authentication
-
+import auth
 
 logger = logging.getLogger("bot.rick")
 
@@ -46,7 +45,7 @@ class Rick(Astley):
                 exc = traceback.format_exception(e.__class__, e, e.__traceback__)
                 exc = '\n'.join(exc)
                 logger.error(f"Exception occurred in on_message {message.jump_url}\n{exc}")
-                hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+                hook = discord.Webhook.from_url(auth.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
                 try:
                     await hook.send(f"Exception occurred in [on_message](<{message.jump_url}>):```py\n{exc[:1850]}\n```")
                 except discord.DiscordException:
@@ -64,7 +63,7 @@ class Rick(Astley):
             exc = traceback.format_exception(e.__class__, e, e.__traceback__)
             exc = '\n'.join(exc)
             logger.error(f"Exception occurred in on_message_edit {message.jump_url}\n{exc}")
-            hook = discord.Webhook.from_url(authentication.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+            hook = discord.Webhook.from_url(auth.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
             try:
                 await hook.send(f"Exception occurred in [on_message_edit](<{message.jump_url}>):```py\n{exc[:1850]}\n```")
             except discord.DiscordException:

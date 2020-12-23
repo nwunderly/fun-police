@@ -12,14 +12,11 @@ logger = logging.getLogger('utils.helpers')
 
 
 def setup_logger(name, debug):
-    logger = logging.getLogger(name)
+    _logger = logging.getLogger(name)
     d = datetime.datetime.now()
     time = f"{d.month}-{d.day}_{d.hour}h{d.minute}m"
 
-    if sys.platform == 'linux':
-        filename = '/home/rick/logs/{}.log'
-    else:
-        filename = './logs/{}.log'
+    filename = './logs/{}.log'
     if debug:
         level = logging.DEBUG
     else:
@@ -31,14 +28,17 @@ def setup_logger(name, debug):
     stream_handler = logging.StreamHandler(sys.stdout)
     # stream_handler.setLevel(level)
 
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-    stream_handler.setFormatter(formatter)
+    file_handler.setFormatter(
+        logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    )
+    stream_handler.setFormatter(
+        logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+    )
 
-    logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
-    logger.setLevel(level)
-    return logger
+    _logger.addHandler(file_handler)
+    _logger.addHandler(stream_handler)
+    _logger.setLevel(level)
+    return _logger
 
 
 async def maybe_coroutine(func, *args, **kwargs):
