@@ -61,7 +61,7 @@ class Astley(commands.AutoShardedBot):
             activity = discord.Game(name.replace("playing ", ""))
         elif name.lower().startswith("watching "):
             activity = discord.Activity(type=discord.ActivityType.watching,
-                                        name=name.replace("watching", ""))
+                                        name=name.replace("watching ", ""))
         elif name.lower().startswith("listening to "):
             activity = discord.Activity(type=discord.ActivityType.listening,
                                         name=name.replace("listening to ", ""))
