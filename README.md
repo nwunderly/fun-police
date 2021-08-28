@@ -15,7 +15,7 @@
  Feel free to join the support server to share any issues or feedback. We'd love to hear what you think!
  We'll also be watching this repository's pull requests and issues for any community feedback.
  
- You may also reach out to `nwunder#0003` or `No Jons#1299` on Discord with any questions or concerns regarding the bot.
+ You may also reach out to `nwunder#4003` or `No Jons#1299` on Discord with any questions or concerns regarding the bot.
 
 ### Support the bot
  We are not currently looking for donations, since the bot is currently small enough that this is not yet a problem. This may change in the future, but rest assured that no features will ever be locked behind a paywall.
