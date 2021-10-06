@@ -1,4 +1,4 @@
-# Rickroll-warning-system
+# Fun-Police
  
  Fun Police is an open source Discord bot that scans YouTube videos for Rick rolls.
  
