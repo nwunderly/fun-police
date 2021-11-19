@@ -34,6 +34,10 @@ class RickRollDetector:
         self.session = session
         self.redis = bot.redis
         self.base_url = "https://www.googleapis.com/youtube/v3/commentThreads?"
+        self.domains_to_ignore = ['www.minecraft.net', 'minecraft.net']
+
+        # filter ignored domains (fucking minecraft links breaking my bot)
+        urls = [url for url in urls if get_domain(url) not in self.domains_to_ignore]
 
         # list of QuestionableURL objects
         self.urls = [QuestionableURL(url) for url in urls]
@@ -81,9 +85,7 @@ class RickRollDetector:
         return self.rick_rolls, self.redirects
 
     def remove_dupes(self):
-        """
-        Deletes duplicates from self.urls.
-        """
+        """Deletes duplicates from self.urls."""
         used = set()
         for url in list(self.urls):
             u = url.url()
@@ -98,7 +100,7 @@ class RickRollDetector:
             url = url_obj.url()
             domain = url_obj.domain()
 
-        # url
+            # url
             logger.debug(f"CHECKING REDIS FOR URL {url}")
             redis = await self.redis.url_get(url)
             logger.debug(f"RESULT FROM REDIS: {redis}")
@@ -129,7 +131,7 @@ class RickRollDetector:
 
                 continue
 
-        # domain
+            # domain
             redis = await self.redis.url_get(f"domain::{domain}")
             if redis and isinstance(redis, dict):  # if not cached, will continue on to the next set of checks
                 is_rick_roll = redis.get('is_rick_roll')
@@ -146,9 +148,7 @@ class RickRollDetector:
                 continue
 
     async def resolve(self):
-        """
-        Takes list of URL strings and returns list of resolved youtube urls.
-        """
+        """Takes list of URL strings and returns list of resolved youtube urls."""
 
         async def get(_url, recursions=0):
 
@@ -239,9 +239,7 @@ class RickRollDetector:
                 logger.error(f"Database error, invalid result for URL: {url}")
 
     def filter_youtube(self):
-        """
-        Removes non-youtube URLs from list of Response objects
-        """
+        """Removes non-youtube URLs from list of Response objects"""
         logger.debug("FILTER_YOUTUBE CALLED")
         for url_obj in list(self.urls):
             logger.debug(f"filter_youtube: url {url_obj.url()}, {url_obj.url(stripped=False)}")
@@ -255,8 +253,8 @@ class RickRollDetector:
                 logger.debug(f"filter_youtube: keeping URL {url}")
 
     async def check_youtube_video_data(self):
-        """
-        Uses web scraping to check YouTube page title, video title, and video description
+        """Uses youtube API to check YouTube page title, video title, and video description
+        
         Returns updated rick roll data and URLs that tested negative (to be checked using YouTube API)
         """
 
@@ -321,9 +319,7 @@ class RickRollDetector:
                     raise YoutubeApiError(f"[{e.__class__.__name__}] {e}")
 
     async def check_comments(self):
-        """
-        Uses YouTube API to pull up to 100 top comments and checks for clues using regex.
-        """
+        """Uses YouTube API to pull up to 100 top comments and checks for clues using regex."""
         for url_obj in list(self.urls):
             url = url_obj.url(stripped=False)
             comments = await self.get_comments(url)
@@ -332,9 +328,7 @@ class RickRollDetector:
                 self.rick_rolls[strip_url(url_obj.url())] = RickRollData('comments', {'percent': percent, 'count': count})
 
     async def get_comments(self, url):
-        """
-        Pulls video comments using HTTP request to YouTube API.
-        """
+        """Pulls video comments using HTTP request to YouTube API."""
         url = url if isinstance(url, str) else url.human_repr()
         parsed_url = urlparse(url)
         video_id = None
@@ -362,9 +356,7 @@ class RickRollDetector:
 
     @staticmethod
     def parse_comments(comments):
-        """
-        Runs regex search on list of comments and returns count/percent of matches.
-        """
+        """Runs regex search on list of comments and returns count/percent of matches."""
         count = 0
         if comments:
             for i in comments:
