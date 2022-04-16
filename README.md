@@ -10,6 +10,8 @@
 
 [Check out our website!](https://ter.ps/funpolicegit)
 
+### Privacy Policy
+ In order for this bot to function, it reads message content to look for Rickroll links. Message content is discarded after processing and only links flagged as positive for Rickrolls are stored. Any concerns about user privacy, including requests for data deletion or to opt out of message content processing, can be directed to `nwunder#4003` on Discord. Other ways to contact me can be found on my [GitHub profile](https://github.com/nwunderly).
 
 ### Support and Feedback
  Feel free to join the support server to share any issues or feedback. We'd love to hear what you think!
