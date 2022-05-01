@@ -1,11 +1,9 @@
-import discord
 import datetime
+
 import aiohttp
-
-from discord.ext import commands
-from discord.ext import tasks
-
+import discord
 from auth import WEBHOOKS
+from discord.ext import commands, tasks
 
 
 class DailyStats:
@@ -29,22 +27,31 @@ class DailyStats:
             self.youtube_urls_seen,
             self.youtube_data_requests,
             self.youtube_comment_requests,
-            self.rickrolls_detected
+            self.rickrolls_detected,
         )
-        with open('daily_stats.csv', 'a') as f:
+        with open("daily_stats.csv", "a") as f:
             f.write("\n")
-            f.write(','.join([str(i) for i in data]))
+            f.write(",".join([str(i) for i in data]))
         self.dumped = True
 
     async def send(self):
         async with aiohttp.ClientSession() as session:
-            hook = discord.Webhook.from_url(WEBHOOKS['stats'], adapter=discord.AsyncWebhookAdapter(session))
-            e = discord.Embed(title=f"DAILY STATS FOR {self.day}", color=discord.Color.blurple())
+            hook = discord.Webhook.from_url(
+                WEBHOOKS["stats"], adapter=discord.AsyncWebhookAdapter(session)
+            )
+            e = discord.Embed(
+                title=f"DAILY STATS FOR {self.day}", color=discord.Color.blurple()
+            )
             e.add_field(name="messages_seen", value=str(self.messages_seen))
             e.add_field(name="urls_seen", value=str(self.urls_seen))
             e.add_field(name="youtube_urls_seen", value=str(self.youtube_urls_seen))
-            e.add_field(name="youtube_data_requests", value=str(self.youtube_data_requests))
-            e.add_field(name="youtube_comment_requests", value=str(self.youtube_comment_requests))
+            e.add_field(
+                name="youtube_data_requests", value=str(self.youtube_data_requests)
+            )
+            e.add_field(
+                name="youtube_comment_requests",
+                value=str(self.youtube_comment_requests),
+            )
             e.add_field(name="rickrolls_detected", value=str(self.rickrolls_detected))
             await hook.send(embed=e)
 
@@ -53,6 +60,7 @@ class Stats(commands.Cog):
     """
     Tracks stats for Fun Police.
     """
+
     def __init__(self, bot):
         self.bot = bot
         self.today = datetime.date.today()
@@ -73,8 +81,3 @@ class Stats(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Stats(bot))
-
-
-
-
-

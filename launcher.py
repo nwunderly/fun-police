@@ -1,10 +1,10 @@
 import logging
 from argparse import ArgumentParser
+
 from discord.ext import commands
 
-from utils.helpers import setup_logger
 from bot.rick import Rick
-
+from utils.helpers import setup_logger
 
 logger = logging.getLogger("launcher")
 
@@ -13,12 +13,11 @@ def start(_args):
     debug = _args.debug
     dev_bot = _args.dev_bot
 
-    setup_logger('launcher', debug)
-    setup_logger('bot', debug)
-    setup_logger('utils', debug)
-    setup_logger('cogs', debug)
-    setup_logger('discord', False)
-
+    setup_logger("launcher", debug)
+    setup_logger("bot", debug)
+    setup_logger("utils", debug)
+    setup_logger("cogs", debug)
+    setup_logger("discord", False)
 
     logger.info(f"Starting bot.")
 
@@ -27,12 +26,12 @@ def start(_args):
     # if sys.platform != 'linux' or debug:
     try:
         logger.info("Adding debug cog.")
-        bot.load_extension('jishaku')
+        bot.load_extension("jishaku")
     except commands.ExtensionFailed:
         pass
 
     try:
-        bot.run(bot=('main' if not dev_bot else 'dev'))
+        bot.run(bot=("main" if not dev_bot else "dev"))
     finally:
         try:
             exit_code = bot._exit_code
@@ -46,8 +45,8 @@ def start(_args):
 def parse_args():
 
     parser = ArgumentParser(description="Start Rickroll Detector bot.")
-    parser.add_argument('--debug', '-d', action='store_true')
-    parser.add_argument('--dev-bot', '-dev', action='store_true')
+    parser.add_argument("--debug", "-d", action="store_true")
+    parser.add_argument("--dev-bot", "-dev", action="store_true")
 
     return parser.parse_args()
 

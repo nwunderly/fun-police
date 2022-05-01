@@ -1,15 +1,14 @@
+prefix = "!!"
 
-prefix = '!!'
+version = "1.6.0"
 
-version = '1.6.0'
-
-cogs = ['cogs.testing', 'cogs.admin', 'cogs.users', 'cogs.stats']
+cogs = ["cogs.testing", "cogs.admin", "cogs.users", "cogs.stats"]
 
 activities = [
-    'playing no fun allowed',
-    'watching for rick rolls',
-    f'playing {prefix}help',
-    'listening to Never Gonna Give You Up'
+    "playing no fun allowed",
+    "watching for rick rolls",
+    f"playing {prefix}help",
+    "listening to Never Gonna Give You Up",
 ]
 
 # how many comments to load from YouTube API
@@ -22,12 +21,8 @@ comment_count = 100
 
 owner_ids = [448250281097035777, 204414611578028034]
 
-bot_url = 'https://discordapp.com/oauth2/authorize?client_id=687454860907511881&scope=bot&permissions=67456001'
+bot_url = "https://discordapp.com/oauth2/authorize?client_id=687454860907511881&scope=bot&permissions=67456001"
 
-server_url = 'https://discord.gg/3nhhWPF'
+server_url = "https://discord.gg/3nhhWPF"
 
-github_url = 'https://github.com/nwunderly/rickroll-warning-system'
-
-
-
-
+github_url = "https://github.com/nwunderly/rickroll-warning-system"

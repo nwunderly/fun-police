@@ -1,13 +1,15 @@
-import aiohttp
-import re
-import logging
 import copy
+import logging
+import re
+
+import aiohttp
+from auth import YOUTUBE_API_KEY
+from discord.ext import commands
+
 # import boto3
 
-from discord.ext import commands
-from auth import YOUTUBE_API_KEY
 
-logger = logging.getLogger('cogs.testing')
+logger = logging.getLogger("cogs.testing")
 
 
 # todo: remove this cog before launch
@@ -18,7 +20,7 @@ class Testing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # self.table = boto3.resource('dynamodb').Table('Rick')
-        self.stats = {'correct': set(), 'total': set()}
+        self.stats = {"correct": set(), "total": set()}
 
     def cog_check(self, ctx):
         return ctx.author.id in [448250281097035777, 204414611578028034]
@@ -52,7 +54,7 @@ class Testing(commands.Cog):
     async def process_rick_rolls(self, ctx):
         await self.bot.process_rick_rolls(ctx.message)
 
-    @commands.command(aliases=['a'])
+    @commands.command(aliases=["a"])
     async def accuracy_test(self, ctx, url, is_rick_roll: bool = True):
         message = copy.copy(ctx.message)
         message.content = url
@@ -60,33 +62,48 @@ class Testing(commands.Cog):
         guess = await self.bot.process_rick_rolls(message)
 
         if guess == is_rick_roll:
-            self.stats['correct'].add(url)
+            self.stats["correct"].add(url)
             correct_guess = True
         else:
             correct_guess = False
-        self.stats['total'].add(url)
-        percent = str(len(self.stats['correct'])/len(self.stats['total'])*100) + '%' if len(self.stats['total']) != 0 else 'undefined'
-        await ctx.send(f"Bot guessed {guess}, should be {is_rick_roll}.\n"
-                       f"{'Correct' if correct_guess else 'Incorrect'} guess for {'' if is_rick_roll else 'non-'}rick-roll.\n"
-                       f"{len(self.stats['correct'])}/{len(self.stats['total'])} guesses correct. ({percent})")
+        self.stats["total"].add(url)
+        percent = (
+            str(len(self.stats["correct"]) / len(self.stats["total"]) * 100) + "%"
+            if len(self.stats["total"]) != 0
+            else "undefined"
+        )
+        await ctx.send(
+            f"Bot guessed {guess}, should be {is_rick_roll}.\n"
+            f"{'Correct' if correct_guess else 'Incorrect'} guess for {'' if is_rick_roll else 'non-'}rick-roll.\n"
+            f"{len(self.stats['correct'])}/{len(self.stats['total'])} guesses correct. ({percent})"
+        )
 
     @commands.command()
     async def stats(self, ctx):
-        percent = str(len(self.stats['correct'])/len(self.stats['total'])*100) + '%' if len(self.stats['total']) != 0 else 'undefined'
-        await ctx.send(f"{len(self.stats['correct'])}/{len(self.stats['total'])} guesses correct. ({percent})")
+        percent = (
+            str(len(self.stats["correct"]) / len(self.stats["total"]) * 100) + "%"
+            if len(self.stats["total"]) != 0
+            else "undefined"
+        )
+        await ctx.send(
+            f"{len(self.stats['correct'])}/{len(self.stats['total'])} guesses correct. ({percent})"
+        )
 
     @commands.command()
     async def check_playlists(self, ctx, *urls):
         rick_rolls = 0
         total = 0
         for url in urls:
-            playlist_id = re.fullmatch(r"^((?:https?:)?//)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(/(?:[\w\-]+\?v=|embed/|v/)?)([\w\-]+)(\S+)?$", url).group(6)[6:]
+            playlist_id = re.fullmatch(
+                r"^((?:https?:)?//)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(/(?:[\w\-]+\?v=|embed/|v/)?)([\w\-]+)(\S+)?$",
+                url,
+            ).group(6)[6:]
             request_url = f"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={playlist_id}&key={YOUTUBE_API_KEY}"
             await ctx.send(playlist_id)
             async with self.bot.session.get(request_url) as response:
                 json = await response.json()
                 print(json)
-            videos = json['items']
+            videos = json["items"]
             n = 0
             for i, video in enumerate(videos):
                 total += 1

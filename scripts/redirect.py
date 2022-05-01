@@ -1,5 +1,6 @@
-import aiohttp
 import asyncio
+
+import aiohttp
 
 
 async def get(url):
@@ -9,4 +10,4 @@ async def get(url):
             print(response.headers)
 
 
-asyncio.run(get('http://ter.ps/bikinibottom'))
+asyncio.run(get("http://ter.ps/bikinibottom"))

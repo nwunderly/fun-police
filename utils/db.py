@@ -1,10 +1,11 @@
-import aredis
 import datetime
 import logging
 
+import aredis
+
 from utils.helpers import strip_url
 
-logger = logging.getLogger('utils.db')
+logger = logging.getLogger("utils.db")
 
 
 """
@@ -25,7 +26,7 @@ class AsyncRedis(aredis.StrictRedis):
     """
 
     def __init__(self):
-        super().__init__(host='redis', port=6379, db=0)
+        super().__init__(host="redis", port=6379, db=0)
 
     async def url_set(self, url, is_rick_roll, detected_by, extra, *args, **kwargs):
         """
@@ -33,10 +34,10 @@ class AsyncRedis(aredis.StrictRedis):
         """
         url = strip_url(url)
         data = {
-            'is_rick_roll': is_rick_roll,
-            'timestamp': str(datetime.datetime.now()),
-            'detected_by': detected_by,
-            'extra': extra
+            "is_rick_roll": is_rick_roll,
+            "timestamp": str(datetime.datetime.now()),
+            "detected_by": detected_by,
+            "extra": extra,
         }
         await self.set(url, data, *args, **kwargs)
 
@@ -48,5 +49,3 @@ class AsyncRedis(aredis.StrictRedis):
             return data
         else:
             return None
-
-

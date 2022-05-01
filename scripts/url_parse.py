@@ -1,9 +1,13 @@
-from urllib.parse import urlparse, parse_qs
 import re
+from urllib.parse import parse_qs, urlparse
 
 
 def strip_url(url):
-    url = url if (url.startswith('https://') or url.startswith('http://')) else 'http://' + url
+    url = (
+        url
+        if (url.startswith("https://") or url.startswith("http://"))
+        else "http://" + url
+    )
     parsed = urlparse(url)
 
     def remove_www():
@@ -18,13 +22,13 @@ def strip_url(url):
         return f"{netloc}/{parsed.path}?{parsed.query}"
 
     # reassembles youtube address without unnecessary queries
-    if parsed.netloc == 'www.youtube.com' or parsed.netloc == 'youtube.com':
-        v = parse_qs(parsed.query).get('v')[0]
+    if parsed.netloc == "www.youtube.com" or parsed.netloc == "youtube.com":
+        v = parse_qs(parsed.query).get("v")[0]
         if v:
             return f"youtube.com/watch?v={v}"
 
     # youtu.be -> youtube so it doesn't have to be resolved
-    elif parsed.netloc == 'youtu.be':
+    elif parsed.netloc == "youtu.be":
         v = parsed.path[1:]
         if v:
             return f"youtube.com/watch?v={v}"
@@ -33,5 +37,4 @@ def strip_url(url):
     return remove_www()
 
 
-print(strip_url('youtu.be/dQw4w9WgXcQ'))
-
+print(strip_url("youtu.be/dQw4w9WgXcQ"))

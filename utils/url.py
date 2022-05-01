@@ -1,9 +1,8 @@
 import logging
 
-from utils.helpers import strip_url, get_domain
+from utils.helpers import get_domain, strip_url
 
-
-logger = logging.getLogger('utils.url')
+logger = logging.getLogger("utils.url")
 
 
 class QuestionableURL:
@@ -59,12 +58,12 @@ class QuestionableURL:
             else:
                 return (await self.response.read()).decode()
         else:
-            raise ValueError("URL has not been updated with a response and cannot be read.")
+            raise ValueError(
+                "URL has not been updated with a response and cannot be read."
+            )
 
     def close(self):
         self._closed = True
         if self.response:
             # await self.response.release()
             self.response.close()
-
-

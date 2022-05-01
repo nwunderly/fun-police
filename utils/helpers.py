@@ -1,14 +1,13 @@
-
-import logging
-import datetime
-import sys
 import asyncio
+import datetime
+import logging
 import re
+import sys
+from urllib.parse import parse_qs, urlparse
+
 import yarl
 
-from urllib.parse import urlparse, parse_qs
-
-logger = logging.getLogger('utils.helpers')
+logger = logging.getLogger("utils.helpers")
 
 
 def setup_logger(name, debug):
@@ -16,7 +15,7 @@ def setup_logger(name, debug):
     d = datetime.datetime.now()
     time = f"{d.month}-{d.day}_{d.hour}h{d.minute}m"
 
-    filename = './logs/{}.log'
+    filename = "./logs/{}.log"
     if debug:
         level = logging.DEBUG
     else:
@@ -29,10 +28,10 @@ def setup_logger(name, debug):
     # stream_handler.setLevel(level)
 
     file_handler.setFormatter(
-        logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     )
     stream_handler.setFormatter(
-        logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+        logging.Formatter("%(name)s - %(levelname)s - %(message)s")
     )
 
     _logger.addHandler(file_handler)
@@ -53,7 +52,11 @@ def strip_url(url):
         return None
     if isinstance(url, yarl.URL):
         url = url.human_repr()
-    url = url if (url.startswith('https://') or url.startswith('http://')) else 'http://' + url
+    url = (
+        url
+        if (url.startswith("https://") or url.startswith("http://"))
+        else "http://" + url
+    )
     parsed = urlparse(url)
 
     def remove_www():
@@ -63,22 +66,22 @@ def strip_url(url):
         else:
             netloc = parsed.netloc
         _url = f"{netloc}"
-        _url += f"{parsed.path}" if parsed.path else ''
-        _url += f"{parsed.query}" if parsed.query else ''
+        _url += f"{parsed.path}" if parsed.path else ""
+        _url += f"{parsed.query}" if parsed.query else ""
         return _url
 
     # reassembles youtube address without unnecessary queries
-    if parsed.netloc == 'www.youtube.com' or parsed.netloc == 'youtube.com':
+    if parsed.netloc == "www.youtube.com" or parsed.netloc == "youtube.com":
         v = parse_qs(parsed.query)
         if v:
-            v = v.get('v')
+            v = v.get("v")
             if v:
                 v = v[0]
                 if v:
                     return f"youtube.com/watch?v={v}"
 
     # youtu.be -> youtube so it doesn't have to be resolved
-    elif parsed.netloc == 'youtu.be':
+    elif parsed.netloc == "youtu.be":
         v = parsed.path[1:]
         if v:
             return f"youtube.com/watch?v={v}"
@@ -88,7 +91,10 @@ def strip_url(url):
 
 
 def get_domain(url):
-    url = url if (url.startswith('https://') or url.startswith('http://')) else 'http://' + url
+    url = (
+        url
+        if (url.startswith("https://") or url.startswith("http://"))
+        else "http://" + url
+    )
     parsed = urlparse(url)
     return parsed.netloc
-

@@ -1,15 +1,15 @@
-import aiohttp
 import logging
 import traceback
 
+import aiohttp
+import auth
 import discord
 from discord.ext import commands
 
 # custom imports
 from bot.astley import Astley
-from utils.patterns import *
 from utils.detector import RickRollDetector
-import auth
+from utils.patterns import *
 
 logger = logging.getLogger("bot.rick")
 
@@ -18,6 +18,7 @@ class Rick(Astley):
     """
     A bot that detects and warns you about possible Rick rolls.
     """
+
     def __init__(self):
         super().__init__()
         self.description = "The best Discord bot for detecting Rick rolls."
@@ -31,23 +32,35 @@ class Rick(Astley):
     async def on_message(self, message):
         if not message.guild:
             return
-        if message.author == self.user or message.author.id in [687454860907511881, 715258929155932273]:
+        if message.author == self.user or message.author.id in [
+            687454860907511881,
+            715258929155932273,
+        ]:
             return
         await self.process_commands(message)
         if message.guild.id in self.ignored_guilds:
             return
-        if not message.content.lower().startswith(f'{self.command_prefix}check') \
-                and not message.content.lower().startswith(f'{self.command_prefix}report') \
-                and not message.content.lower().startswith(f'{self.command_prefix}remove'):
+        if (
+            not message.content.lower().startswith(f"{self.command_prefix}check")
+            and not message.content.lower().startswith(f"{self.command_prefix}report")
+            and not message.content.lower().startswith(f"{self.command_prefix}remove")
+        ):
             try:
                 await self.process_rick_rolls(message)
             except Exception as e:
                 exc = traceback.format_exception(e.__class__, e, e.__traceback__)
-                exc = '\n'.join(exc)
-                logger.error(f"Exception occurred in on_message {message.jump_url}\n{exc}")
-                hook = discord.Webhook.from_url(auth.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+                exc = "\n".join(exc)
+                logger.error(
+                    f"Exception occurred in on_message {message.jump_url}\n{exc}"
+                )
+                hook = discord.Webhook.from_url(
+                    auth.WEBHOOKS["errors"],
+                    adapter=discord.AsyncWebhookAdapter(self.session),
+                )
                 try:
-                    await hook.send(f"Exception occurred in [on_message](<{message.jump_url}>):```py\n{exc[:1850]}\n```")
+                    await hook.send(
+                        f"Exception occurred in [on_message](<{message.jump_url}>):```py\n{exc[:1850]}\n```"
+                    )
                 except discord.DiscordException:
                     logger.error("Failed to log error to logging channel.")
 
@@ -61,11 +74,18 @@ class Rick(Astley):
             await self.process_rick_rolls(after)
         except Exception as e:
             exc = traceback.format_exception(e.__class__, e, e.__traceback__)
-            exc = '\n'.join(exc)
-            logger.error(f"Exception occurred in on_message_edit {message.jump_url}\n{exc}")
-            hook = discord.Webhook.from_url(auth.WEBHOOKS['errors'], adapter=discord.AsyncWebhookAdapter(self.session))
+            exc = "\n".join(exc)
+            logger.error(
+                f"Exception occurred in on_message_edit {message.jump_url}\n{exc}"
+            )
+            hook = discord.Webhook.from_url(
+                auth.WEBHOOKS["errors"],
+                adapter=discord.AsyncWebhookAdapter(self.session),
+            )
             try:
-                await hook.send(f"Exception occurred in [on_message_edit](<{message.jump_url}>):```py\n{exc[:1850]}\n```")
+                await hook.send(
+                    f"Exception occurred in [on_message_edit](<{message.jump_url}>):```py\n{exc[:1850]}\n```"
+                )
             except discord.DiscordException:
                 logger.error("Failed to log error to logging channel.")
 
@@ -83,12 +103,12 @@ class Rick(Astley):
         if len(rick_rolls) > 1:
             urls = ""
             for url, info in rick_rolls.items():
-                original = ', '.join(redirects[url])
+                original = ", ".join(redirects[url])
                 check = rick_rolls[url].check
                 logger.debug(f"CHECK: {check}")
-                if check == 'domain':
+                if check == "domain":
                     urls += f"\n{original} -> {rick_rolls[url].extra}"
-                elif check == 'redirect':
+                elif check == "redirect":
                     urls += f"\n{original} -> {rick_rolls[url].extra}"
                 elif original:
                     urls += f"\n{original} -> {url}"
@@ -98,12 +118,12 @@ class Rick(Astley):
             await message.channel.send(msg)
         else:
             url = list(rick_rolls.keys())[0]
-            original = ', '.join(redirects[url])
+            original = ", ".join(redirects[url])
             check = rick_rolls[url].check
             logger.debug(f"CHECK: {check}")
-            if check == 'domain':
+            if check == "domain":
                 url = f"\n{original} -> {rick_rolls[url].extra}"
-            elif check == 'redirect':
+            elif check == "redirect":
                 url = f"\n{original} -> {rick_rolls[url].extra}"
             elif original:
                 url = f"\n{original} -> {url}"
@@ -127,7 +147,7 @@ class Rick(Astley):
         self.stats.messages_seen += 1
 
         urls = self.get_urls(message.content)
-        
+
         if not urls:
             return
 
@@ -145,10 +165,12 @@ class Rick(Astley):
         # write new rick rolls to Redis
         # todo: cache non-rick-rolls too
         for url, data in rick_rolls.items():
-            if data.check != 'redis':
+            if data.check != "redis":
                 await self.redis.url_set(url, True, data.check, data.extra)
-            for original_url in redirects[url]:  # defaultdict so returns empty list if no associated redirects
-                await self.redis.url_set(original_url, True, 'redirect', url)
+            for original_url in redirects[
+                url
+            ]:  # defaultdict so returns empty list if no associated redirects
+                await self.redis.url_set(original_url, True, "redirect", url)
 
         return bool(rick_rolls)
 
@@ -157,10 +179,9 @@ class Rick(Astley):
             try:
                 self.load_extension(cog)
             except commands.ExtensionFailed as exception:
-                traceback.print_exception(type(exception), exception, exception.__traceback__)
+                traceback.print_exception(
+                    type(exception), exception, exception.__traceback__
+                )
 
     async def cleanup(self):
         await self.session.close()
-
-
-
