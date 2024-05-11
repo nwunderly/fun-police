@@ -16,12 +16,12 @@ logger = logging.getLogger("bot.rick")
 
 class Rick(Astley):
     """
-    A bot that detects and warns you about possible Rick rolls.
+    A bot that detects and warns you about possible Rickrolls.
     """
 
     def __init__(self):
         super().__init__()
-        self.description = "The best Discord bot for detecting Rick rolls."
+        self.description = "The best Discord bot for detecting Rickrolls."
         self.url_pattern = url_pattern
         self.yt_pattern = yt_pattern
         self.rickroll_pattern = rickroll_pattern
@@ -114,7 +114,7 @@ class Rick(Astley):
                     urls += f"\n{original} -> {url}"
                 else:
                     urls += f"\n{url}"
-            msg = f"**⚠ Detected Rickroll at {len(rick_rolls)} URLs:**```{urls}```"
+            msg = f"**:warning: Detected Rickroll at {len(rick_rolls)} URLs:**```{urls}```"
             await message.channel.send(msg)
         else:
             url = list(rick_rolls.keys())[0]
@@ -129,13 +129,13 @@ class Rick(Astley):
                 url = f"\n{original} -> {url}"
             else:
                 url = f"\n{url}"
-            msg = f"**⚠ Detected Rickroll at URL:\n**```{url}```"
+            msg = f"**:warning: Detected Rickroll at URL:\n**```{url}```"
             await message.channel.send(msg)
 
     async def process_rick_rolls(self, message):
         """
-        Calls find_rick_rolls, then processes results, sends a message if necessary and adds any rick rolls found to redis cache.
-        Returns True or False depending on whether any rick rolls were found.
+        Calls find_rick_rolls, then processes results, sends a message if necessary and adds any rickrolls found to redis cache.
+        Returns True or False depending on whether any rickrolls were found.
         :param message: discord Message object to be checked.
         :return: list of dicts, each with "is_rick_roll" and "extra" fields.
         """
@@ -162,7 +162,7 @@ class Rick(Astley):
 
         await self.process_results(message, rick_rolls, redirects)
 
-        # write new rick rolls to Redis
+        # write new rickrolls to Redis
         # todo: cache non-rick-rolls too
         for url, data in rick_rolls.items():
             if data.check != "redis":

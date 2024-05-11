@@ -93,7 +93,7 @@ class Admin(commands.Cog):
 
     @commands.command()
     async def flag(self, ctx, url, is_rick_roll: bool = True):
-        """Flag a URL as a rick roll (or not a rick roll)."""
+        """Flag a URL as a rickroll (or not a rickroll)."""
         try:
             await self.bot.redis.url_set(url, is_rick_roll, "manual", None)
             await ctx.send("Done.")
@@ -103,7 +103,7 @@ class Admin(commands.Cog):
 
     @commands.command()
     async def flag_playlist(self, ctx, url):
-        """Flag every video in a YouTube playlist as a rick roll."""
+        """Flag every video in a YouTube playlist as a rickroll."""
         try:
             playlist_id = self.bot.yt_pattern.fullmatch(url).group(6)[6:]
             request_url = f"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={playlist_id}&key={YOUTUBE_API_KEY}"
@@ -143,7 +143,7 @@ class Admin(commands.Cog):
         is_rick_roll: bool = True,
         redirect_url="youtube.com/watch?v=dQw4w9WgXcQ",
     ):
-        """Flag every URL within a certain domain as a rick roll. The bot will send a special message for these URLs."""
+        """Flag every URL within a certain domain as a rickroll. The bot will send a special message for these URLs."""
         try:
             await self.bot.redis.url_set(
                 f"domain::{domain}", is_rick_roll, "manual", redirect_url

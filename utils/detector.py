@@ -30,7 +30,7 @@ class YoutubeApiError(Exception):
 
 class RickRollDetector:
     """
-    Wraps up all methods used for checking a single message for rick rolls.
+    Wraps up all methods used for checking a single message for rickrolls.
     """
 
     def __init__(self, bot, urls: list, session):
@@ -80,7 +80,7 @@ class RickRollDetector:
 
         self.bot.stats.youtube_urls_seen += len(self.urls)
 
-        # download YouTube pages and check with rick roll regex
+        # download YouTube pages and check with rickroll regex
         await self.check_youtube_video_data()
 
         # check comments for any YouTube URLs that haven't already been flagged
@@ -114,9 +114,9 @@ class RickRollDetector:
                 is_rick_roll = redis.get("is_rick_roll")
                 logger.debug(f"is_rick_roll: {is_rick_roll}")
 
-                if is_rick_roll is True:  # it's a cached rick roll
+                if is_rick_roll is True:  # it's a cached rickroll
 
-                    # this url is known to redirect to a rick roll
+                    # this url is known to redirect to a rickroll
                     # slightly different procedure since output needs to include this information
                     if redis.get("detected_by") == "redirect":
                         original_url = redis["extra"]
@@ -148,9 +148,9 @@ class RickRollDetector:
             ):  # if not cached, will continue on to the next set of checks
                 is_rick_roll = redis.get("is_rick_roll")
 
-                if is_rick_roll is True:  # it's a cached rick roll
+                if is_rick_roll is True:  # it's a cached rickroll
 
-                    # this domain is known to redirect all requests to a rick roll
+                    # this domain is known to redirect all requests to a rickroll
                     # slightly different procedure since output needs to include this information
                     original_url = redis["extra"]
                     self.redirects[original_url].add(url)
@@ -236,9 +236,9 @@ class RickRollDetector:
             is_rick_roll = redis.get("is_rick_roll")
             logger.debug(str(is_rick_roll))
 
-            if is_rick_roll is True:  # it's a cached rick roll
+            if is_rick_roll is True:  # it's a cached rickroll
 
-                # this url is known to redirect to a rick roll
+                # this url is known to redirect to a rickroll
                 # slightly different procedure since output needs to include this information
                 if redis.get("detected_by") == "redirect":
                     original_url = redis["extra"]
@@ -247,7 +247,7 @@ class RickRollDetector:
 
                 # standard procedure, logs it and moves on.
                 else:
-                    # makes note that this is a rick roll along with the check that found it
+                    # makes note that this is a rickroll along with the check that found it
                     self.rick_rolls[url] = RickRollData("redis", redis["detected_by"])
 
                 self.urls.remove(url_obj)  # no longer needs to be checked
@@ -279,7 +279,7 @@ class RickRollDetector:
     async def check_youtube_video_data(self):
         """Uses youtube API to check YouTube page title, video title, and video description
 
-        Returns updated rick roll data and URLs that tested negative (to be checked using YouTube API)
+        Returns updated rickroll data and URLs that tested negative (to be checked using YouTube API)
         """
 
         for url_obj in list(self.urls):

@@ -1,12 +1,12 @@
 prefix = "!!"
 
-version = "1.6.0"
+version = "1.6.1"
 
 cogs = ["cogs.testing", "cogs.admin", "cogs.users", "cogs.stats"]
 
 activities = [
     "playing no fun allowed",
-    "watching for rick rolls",
+    "watching for Rickrolls",
     f"playing {prefix}help",
     "listening to Never Gonna Give You Up",
 ]

@@ -7,7 +7,7 @@ logger = logging.getLogger("utils.url")
 
 class QuestionableURL:
     """
-    A single possible Rick Roll URL.
+    A single possible Rickroll URL.
     Stores useful info about a particular URL as it progresses through the checks.
     """
 

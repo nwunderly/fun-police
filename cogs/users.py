@@ -75,7 +75,7 @@ class Users(commands.Cog):
             name="Support server", value=f"[join]({self.bot.properties.server_url})"
         )
 
-        embed.set_footer(text=f"created by nwunder#5176 and No Jons#1299")
+        embed.set_footer(text=f"created by nwunder and .nojons")
         embed.timestamp = self.bot.user.created_at
         await ctx.send(embed=embed)
 

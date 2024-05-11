@@ -118,8 +118,8 @@ class Testing(commands.Cog):
                 if result:
                     n += 1
                     rick_rolls += 1
-            await ctx.send(f"Found {n} rick rolls, playlist length {len(videos)}.")
-        await ctx.send(f"Found {rick_rolls} rick rolls, total playlist length {total}.")
+            await ctx.send(f"Found {n} rickrolls, playlist length {len(videos)}.")
+        await ctx.send(f"Found {rick_rolls} rickrolls, total playlist length {total}.")
 
 
 def setup(bot):
