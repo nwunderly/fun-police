@@ -1,6 +1,6 @@
 prefix = "!!"
 
-version = "1.6.1"
+version = "1.7.0"
 
 cogs = ["jishaku", "cogs.admin", "cogs.users", "cogs.stats"]
 
@@ -25,4 +25,4 @@ bot_url = "https://discordapp.com/oauth2/authorize?client_id=687454860907511881&
 
 server_url = "https://discord.gg/3nhhWPF"
 
-github_url = "https://github.com/nwunderly/rickroll-warning-system"
+github_url = "https://github.com/nwunderly/fun-police"
