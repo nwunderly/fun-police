@@ -2,6 +2,5 @@ discord.py~=2.0
 jishaku
 dblpy
 redis
-aredis
 psutil
 PyYAML

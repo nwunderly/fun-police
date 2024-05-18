@@ -1,19 +1,15 @@
 import datetime
 import logging
 
-import aredis
+from redis.asyncio.client import Redis
 
 from utils.helpers import strip_url
 
 logger = logging.getLogger("utils.db")
 
 
-"""
-Intended support for both synchronous and async versions of Redis.
-"""
 
-
-class AsyncRedis(aredis.StrictRedis):
+class AsyncRedis(Redis):
     """
     Async Redis wrapper. Allows for addition of custom methods.
 
@@ -39,7 +35,7 @@ class AsyncRedis(aredis.StrictRedis):
             "detected_by": detected_by,
             "extra": extra,
         }
-        await self.set(url, data, *args, **kwargs)
+        await self.set(url, str(data), *args, **kwargs)
 
     async def url_get(self, url):
         url = strip_url(url)

@@ -3,10 +3,8 @@ import datetime
 import logging
 import random
 import signal
-import sys
 import traceback
 
-import aiohttp
 import discord
 from discord.ext import commands, tasks
 
@@ -35,7 +33,7 @@ class Astley(commands.AutoShardedBot):
         self.started_at = datetime.datetime.now()
         self.redis = AsyncRedis()
         self.properties = properties
-        self.session = aiohttp.ClientSession()
+        self.session = None
 
     async def try_run(self, coro):
         try:

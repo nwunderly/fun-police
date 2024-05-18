@@ -176,6 +176,7 @@ class Rick(Astley):
         return bool(rick_rolls)
 
     async def setup(self):
+        self.session = aiohttp.ClientSession()
         for cog in self.properties.cogs:
             try:
                 await self.load_extension(cog)
