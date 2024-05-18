@@ -40,7 +40,7 @@ class Users(commands.Cog):
                 f"Check out our [website](https://www.youtube.com/watch?v=dQw4w9WgXcQ)!",
             ]
         )
-        embed.set_author(name=str(self.bot.user), icon_url=self.bot.user.avatar_url)
+        embed.set_author(name=str(self.bot.user), icon_url=self.bot.user.avatar.url)
         embed.add_field(name="Version", value=self.bot.properties.version)
         embed.add_field(name="Library", value="discord.py")
         embed.add_field(
