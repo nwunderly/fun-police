@@ -122,5 +122,5 @@ class Testing(commands.Cog):
         await ctx.send(f"Found {rick_rolls} rickrolls, total playlist length {total}.")
 
 
-def setup(bot):
-    bot.add_cog(Testing(bot))
+async def setup(bot):
+    await bot.add_cog(Testing(bot))

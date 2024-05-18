@@ -55,7 +55,7 @@ class Rick(Astley):
                 )
                 hook = discord.Webhook.from_url(
                     auth.WEBHOOKS["errors"],
-                    adapter=discord.AsyncWebhookAdapter(self.session),
+                    session=self.session,
                 )
                 try:
                     await hook.send(
@@ -80,7 +80,7 @@ class Rick(Astley):
             )
             hook = discord.Webhook.from_url(
                 auth.WEBHOOKS["errors"],
-                adapter=discord.AsyncWebhookAdapter(self.session),
+                session=self.session,
             )
             try:
                 await hook.send(
@@ -177,7 +177,7 @@ class Rick(Astley):
     async def setup(self):
         for cog in self.properties.cogs:
             try:
-                self.load_extension(cog)
+                await self.load_extension(cog)
             except commands.ExtensionFailed as exception:
                 traceback.print_exception(
                     type(exception), exception, exception.__traceback__

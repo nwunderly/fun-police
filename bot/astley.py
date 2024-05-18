@@ -26,7 +26,7 @@ class Astley(commands.AutoShardedBot):
 
     def __init__(self, *args, **kwargs):
         kwargs["command_prefix"] = properties.prefix
-        kwargs["intents"] = discord.Intents(guild_messages=True, guilds=True)
+        kwargs["intents"] = discord.Intents(guild_messages=True, guilds=True, message_content=True)
         super().__init__(*args, **kwargs)
         self.loggers = dict()
         self._exit_code = 0
@@ -125,7 +125,7 @@ class Astley(commands.AutoShardedBot):
         exc = traceback.format_exc()
         logger.error(f"Ignoring exception in {event_method}:\n{exc}")
         hook = discord.Webhook.from_url(
-            auth.WEBHOOKS["errors"], adapter=discord.AsyncWebhookAdapter(self.session)
+            auth.WEBHOOKS["errors"], session=self.session
         )
         try:
             await hook.send(
@@ -143,7 +143,7 @@ class Astley(commands.AutoShardedBot):
         if not context.command or isinstance(exception, commands.UserInputError):
             return
         hook = discord.Webhook.from_url(
-            auth.WEBHOOKS["errors"], adapter=discord.AsyncWebhookAdapter(self.session)
+            auth.WEBHOOKS["errors"], session=self.session
         )
         try:
             await hook.send(

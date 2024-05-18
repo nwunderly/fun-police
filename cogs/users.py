@@ -84,7 +84,7 @@ class Users(commands.Cog):
         """Report a rickroll that the bot failed to detect, or a normal URL that the bot thought was a rickroll."""
         hook = discord.Webhook.from_url(
             auth.WEBHOOKS["reports"],
-            adapter=discord.AsyncWebhookAdapter(self.bot.session),
+            session=self.bot.session,
         )
         await hook.send(
             f"⚠ **New report:**\n"
@@ -114,5 +114,5 @@ class Users(commands.Cog):
         await ctx.send(lists)
 
 
-def setup(bot):
-    bot.add_cog(Users(bot))
+async def setup(bot):
+    await bot.add_cog(Users(bot))

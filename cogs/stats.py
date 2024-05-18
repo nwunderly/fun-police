@@ -37,7 +37,7 @@ class DailyStats:
     async def send(self):
         async with aiohttp.ClientSession() as session:
             hook = discord.Webhook.from_url(
-                WEBHOOKS["stats"], adapter=discord.AsyncWebhookAdapter(session)
+                WEBHOOKS["stats"], session=session
             )
             e = discord.Embed(
                 title=f"DAILY STATS FOR {self.day}", color=discord.Color.blurple()
@@ -79,5 +79,5 @@ class Stats(commands.Cog):
             self.bot.stats = DailyStats()
 
 
-def setup(bot):
-    bot.add_cog(Stats(bot))
+async def setup(bot):
+    await bot.add_cog(Stats(bot))

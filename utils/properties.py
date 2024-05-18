@@ -2,7 +2,7 @@ prefix = "!!"
 
 version = "1.6.1"
 
-cogs = ["cogs.testing", "cogs.admin", "cogs.users", "cogs.stats"]
+cogs = ["jishaku", "cogs.testing", "cogs.admin", "cogs.users", "cogs.stats"]
 
 activities = [
     "playing no fun allowed",
