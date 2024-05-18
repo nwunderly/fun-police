@@ -3,8 +3,9 @@ import logging
 import re
 
 import aiohttp
-from auth import YOUTUBE_API_KEY
 from discord.ext import commands
+
+from auth import YOUTUBE_API_KEY
 
 # import boto3
 

@@ -3,8 +3,8 @@ from collections import defaultdict, namedtuple
 from urllib.parse import parse_qs, urlparse
 
 import aiohttp
-import auth
 
+import auth
 from utils.helpers import get_domain, strip_url
 from utils.patterns import *
 from utils.url import QuestionableURL

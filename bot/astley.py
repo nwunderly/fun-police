@@ -7,10 +7,10 @@ import sys
 import traceback
 
 import aiohttp
-import auth
 import discord
 from discord.ext import commands, tasks
 
+import auth
 from utils import properties
 
 # custom imports
@@ -26,7 +26,9 @@ class Astley(commands.AutoShardedBot):
 
     def __init__(self, *args, **kwargs):
         kwargs["command_prefix"] = properties.prefix
-        kwargs["intents"] = discord.Intents(guild_messages=True, guilds=True, message_content=True)
+        kwargs["intents"] = discord.Intents(
+            guild_messages=True, guilds=True, message_content=True
+        )
         super().__init__(*args, **kwargs)
         self.loggers = dict()
         self._exit_code = 0
@@ -124,9 +126,7 @@ class Astley(commands.AutoShardedBot):
     async def on_error(self, event_method, *args, **kwargs):
         exc = traceback.format_exc()
         logger.error(f"Ignoring exception in {event_method}:\n{exc}")
-        hook = discord.Webhook.from_url(
-            auth.WEBHOOKS["errors"], session=self.session
-        )
+        hook = discord.Webhook.from_url(auth.WEBHOOKS["errors"], session=self.session)
         try:
             await hook.send(
                 f"Exception occurred in {event_method}: ```py\n{exc[:1850]}\n```"
@@ -142,9 +142,7 @@ class Astley(commands.AutoShardedBot):
         logger.error(f"Ignoring exception in command {context.command}:\n{exc}")
         if not context.command or isinstance(exception, commands.UserInputError):
             return
-        hook = discord.Webhook.from_url(
-            auth.WEBHOOKS["errors"], session=self.session
-        )
+        hook = discord.Webhook.from_url(auth.WEBHOOKS["errors"], session=self.session)
         try:
             await hook.send(
                 f"Exception occurred in command {context.command}: ```py\n{exc[:1850]}\n```"

@@ -3,11 +3,11 @@ import random
 import sys
 
 import aiohttp
-import auth
 import discord
 import psutil
 from discord.ext import commands
 
+import auth
 from utils.detector import RickRollDetector
 
 

@@ -2,8 +2,9 @@ import datetime
 
 import aiohttp
 import discord
-from auth import WEBHOOKS
 from discord.ext import commands, tasks
+
+from auth import WEBHOOKS
 
 
 class DailyStats:
@@ -36,9 +37,7 @@ class DailyStats:
 
     async def send(self):
         async with aiohttp.ClientSession() as session:
-            hook = discord.Webhook.from_url(
-                WEBHOOKS["stats"], session=session
-            )
+            hook = discord.Webhook.from_url(WEBHOOKS["stats"], session=session)
             e = discord.Embed(
                 title=f"DAILY STATS FOR {self.day}", color=discord.Color.blurple()
             )

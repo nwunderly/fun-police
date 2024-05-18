@@ -2,9 +2,10 @@ import logging
 import traceback
 
 import aiohttp
-import auth
 import discord
 from discord.ext import commands
+
+import auth
 
 # custom imports
 from bot.astley import Astley
