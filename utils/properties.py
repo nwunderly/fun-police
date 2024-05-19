@@ -5,20 +5,15 @@ version = "1.7.0"
 cogs = ["jishaku", "cogs.admin", "cogs.users", "cogs.stats"]
 
 activities = [
-    "playing I'M BACK!!",
-    # "playing no fun allowed",
-    # "watching for Rickrolls",
-    # f"playing {prefix}help",
-    # "listening to Never Gonna Give You Up",
+    "playing I'M BACK!!",  # TEMP
+    "playing no fun allowed",
+    "watching for Rickrolls",
+    f"playing {prefix}help",
+    "listening to Never Gonna Give You Up",
 ]
 
 # how many comments to load from YouTube API
 comment_count = 100
-
-# logging_channels = {
-#     'errors': 714667464700461056,
-#     'reports': 714667557730123776
-# }
 
 owner_ids = [204414611578028034, 878400787661869116]
 
