@@ -8,9 +8,11 @@ Fun Police is an open source Discord bot that scans YouTube videos for Rickrolls
 
 [Check out our website!](https://ter.ps/funpolicegit)
 
-### Privacy Policy
+### Legal
 
-In order for this bot to function, it reads message content to look for Rickroll links. Message content is discarded after processing and only links flagged as positive for Rickrolls are stored. Any concerns about user privacy, including requests for data deletion or to opt out of message content processing, can be sent to `funpolice@nwunder.com` via email or `nwunder` on Discord.
+1. [Terms of Service](./legal.md#terms-of-service)
+2. [Privacy Policy](./legal.md#privacy-policy)
+3. [Source Code License](./LICENSE)
 
 ### Support and Feedback
 
