@@ -4,9 +4,9 @@ This document contains all of the legal nonsense I was forced to write. I tried 
 
 ### In short:
 
-This is a free service I operate as a hobby. It may be unreliable at times, or even be shut down with little notice. If I have to block you from using the bot, I will.
+This is a free service I operate as a hobby. It may be unreliable at times. If I have to block you from using the bot, I will.
 
-The bot has access to your message content. The bot searches messages for URLs, and stores Rickroll URLs that it finds. I take privacy very seriously. Your message content will not be shared or sold.
+The bot reads your messages in order to function. I take privacy very seriously. Your messages will not be stored, shared or sold.
 
 ### Table of Contents
 
